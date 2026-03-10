@@ -88,7 +88,7 @@ img{display:block}
 .setup-sub{color:var(--t3);font-size:13px;margin-bottom:24px}
 .user-opts{display:flex;gap:14px;justify-content:center;margin-top:8px}
 .user-opt{flex:1;padding:18px 12px;border-radius:14px;border:2px solid var(--s3);background:var(--s2);cursor:pointer;transition:all .2s;text-align:center}
-.user-opt:hover{border-color:var(--gold);background:var(--goldbg)}
+.user-opt:hover{border-color:var(--gold);background:var(--goldbg);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .user-opt.sel{border-color:var(--gold);background:var(--goldbg)}
 .user-opt-icon{font-size:32px;margin-bottom:6px}
 .user-opt-name{font-weight:700;font-size:15px}
@@ -241,18 +241,19 @@ img{display:block}
 <!-- ── SETUP SCREEN ─────────────────────────────────────────── -->
 <div id="setupScreen">
   <div class="setup-card">
-    <div class="setup-title serif">Hoş geldin!</div>
-    <div class="setup-sub">Kim olduğunu seç</div>
+    <div style="font-size:48px;margin-bottom:12px">🎬</div>
+    <div class="setup-title serif" style="font-size:26px">Seyir Defteri</div>
+    <div class="setup-sub" style="margin-bottom:32px;font-size:14px">Kim izliyor?</div>
     <div class="user-opts">
-      <div class="user-opt" onclick="selectUser('Fox')">
-        <div class="user-opt-icon">🦊</div>
-        <div class="user-opt-name">Fox</div>
-        <div class="user-opt-color" style="color:var(--fox)">●</div>
+      <div class="user-opt" onclick="selectUser('Fox')" style="padding:28px 20px">
+        <div class="user-opt-icon" style="font-size:44px">🦊</div>
+        <div class="user-opt-name" style="font-size:17px;margin-top:10px">Fox</div>
+        <div style="width:28px;height:4px;border-radius:2px;background:var(--fox);margin:8px auto 0"></div>
       </div>
-      <div class="user-opt" onclick="selectUser('Bun')">
-        <div class="user-opt-icon">🐰</div>
-        <div class="user-opt-name">Bun</div>
-        <div class="user-opt-color" style="color:var(--bun)">●</div>
+      <div class="user-opt" onclick="selectUser('Bun')" style="padding:28px 20px">
+        <div class="user-opt-icon" style="font-size:44px">🐰</div>
+        <div class="user-opt-name" style="font-size:17px;margin-top:10px">Bun</div>
+        <div style="width:28px;height:4px;border-radius:2px;background:var(--bun);margin:8px auto 0"></div>
       </div>
     </div>
   </div>
@@ -309,6 +310,7 @@ img{display:block}
     <button class="tab"    id="tab-suggest"   onclick="showTab('suggest',this)">💡 Öneriler <span class="bcount" id="cnt-suggest">0</span></button>
     <button class="tab"    id="tab-mylog"     onclick="showTab('mylog',this)">📓 İzledim <span class="bcount" id="cnt-mylog">0</span></button>
     <button class="tab"    id="tab-personal"  onclick="showTab('personal',this)">👤 Listem <span class="bcount" id="cnt-personal">0</span></button>
+  <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
   </div>
 
   <!-- ── PANE: SEARCH ──────────────────────────────────────── -->
@@ -431,6 +433,25 @@ img{display:block}
     <div id="personalList"></div>
   </div>
 
+  <!-- ── PANE: DEVAM EDİYORUZ ─────────────────────────── -->
+  <div id="pane-ongoing" style="display:none" class="wrap">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle serif">Devam Ediyoruz ▶</div>
+        <div class="seccnt" id="ongoingSub">Birlikte izlediğiniz diziler</div>
+      </div>
+      <div class="filter-row">
+        <button class="pill on" id="ongoing-all"  onclick="setOngoingFilter('all',this)">Hepsi</button>
+        <button class="pill"    id="ongoing-mine" onclick="setOngoingFilter('mine',this)">Benimkiler</button>
+      </div>
+    </div>
+    <div class="tab-search-bar">
+      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input class="tab-sinp" autocomplete="off" placeholder="Devam listesinde ara…" oninput="filterOngoing(this.value)"/>
+    </div>
+    <div id="ongoingList"></div>
+  </div>
+
 </div><!-- /mainApp -->
 
 <!-- ── MODAL ────────────────────────────────────────────────── -->
@@ -450,6 +471,7 @@ img{display:block}
       <button class="dest-btn" id="dest-shared-watched"   onclick="setDest('shared-watched')">✓ İkimiz İzledik<small>Ortak arşiv</small></button>
       <button class="dest-btn" id="dest-shared-watchlist" onclick="setDest('shared-watchlist')">🎬 Birlikte İzleyeceğiz<small>Ortak liste</small></button>
       <button class="dest-btn" id="dest-mylog"            onclick="setDest('mylog')">📓 Ben İzledim<small>Kişisel kayıt</small></button>
+      <button class="dest-btn" id="dest-ongoing"          onclick="setDest('ongoing')">▶ Devam Ediyoruz<small>İzlemeye devam</small></button>
       <button class="dest-btn" id="dest-suggest"          onclick="setDest('suggest')">💡 Öneri Olarak At<small>Onay beklesin</small></button>
       <button class="dest-btn" id="dest-personal"         onclick="setDest('personal')" style="grid-column:span 2">👤 Listemde Olsun<small>İzlemek istiyorum</small></button>
     </div>
@@ -580,12 +602,9 @@ window.onload = () => {
 };
 
 function loadAfterPin(){
-  const saved = lsGet('cm_user');
-  if(saved) selectUser(saved, true);
-  else{
-    document.getElementById('pinScreen').style.display = 'none';
-    document.getElementById('setupScreen').style.display = 'flex';
-  }
+  // Her zaman kullanıcı seçim ekranı göster - otomatik giriş yok
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'flex';
 }
 
 function selectUser(name){
@@ -987,7 +1006,21 @@ function setMyLogFilter(f, btn){
 function getMyLog(){ return lsGet('cm_mylog_'+(user?.name||'')) || {}; }
 function saveMyLog(data){
   lsSet('cm_mylog_'+user.name, data);
-  if(db && user) db.ref('userLogs/'+user.name).set(data).catch(()=>{});
+  if(db && user){
+    // Büyük veri için chunk'a böl (Firebase 10MB limit)
+    const entries = Object.entries(data);
+    if(entries.length <= 100){
+      db.ref('userLogs/'+user.name).set(data).catch(()=>{});
+    } else {
+      // İlk 100'ü hemen yaz, geri kalanları arka planda
+      const chunk1 = Object.fromEntries(entries.slice(0, 100));
+      db.ref('userLogs/'+user.name).set(chunk1).catch(()=>{});
+      // Sonra tamamını yaz
+      setTimeout(()=>{
+        db.ref('userLogs/'+user.name).set(data).catch(()=>{});
+      }, 2000);
+    }
+  }
   updateCounts();
 }
 
@@ -1058,6 +1091,86 @@ function removeMyLog(id){
   showToast('🗑️ Silindi', backup ? ()=>{
     const l = getMyLog(); l[id]=backup; saveMyLog(l); renderMyLog(); showToast('↩ Geri alındı!');
   } : null);
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// DEVAM EDİYORUZ SEKMESİ
+// ════════════════════════════════════════════════════════════════
+let ongoingFilter = 'all';
+let ongoingSearchQ = '';
+
+function setOngoingFilter(f, btn){
+  ongoingFilter = f;
+  document.querySelectorAll('#ongoing-all,#ongoing-mine').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderOngoing();
+}
+
+function filterOngoing(q){
+  ongoingSearchQ = q.toLowerCase().trim();
+  renderOngoing();
+}
+
+function renderOngoing(){
+  const el = document.getElementById('ongoingList');
+  if(!el) return;
+  let items = Object.values(sharedLib).filter(e=>e.status==='ongoing');
+  if(ongoingFilter==='mine') items = items.filter(e=>(e.addedBy===user.name)||(e.wantedBy&&e.wantedBy.includes(user.name)));
+  if(ongoingSearchQ) items = items.filter(e=>(e.title||'').toLowerCase().includes(ongoingSearchQ));
+  items.sort((a,b)=>(b.updatedAt||b.addedAt||0)-(a.updatedAt||a.addedAt||0));
+
+  const sub = document.getElementById('ongoingSub');
+  if(sub) sub.textContent = items.length + ' dizi/film';
+
+  if(!items.length){
+    el.innerHTML = emptyHtml('▶','Devam listesi boş','Aramadan "Devam Ediyoruz" olarak ekleyin');
+    return;
+  }
+
+  el.innerHTML = items.map(item=>{
+    const yr = item.year||'';
+    const poster = item.poster
+      ? `<img class="cimg" src="${IMG_BASE}${item.poster}" loading="lazy" style="border-radius:10px 0 0 10px"/>`
+      : `<div class="cph" style="border-radius:10px 0 0 10px">${item.tv?'📺':'🎬'}</div>`;
+    const ratingFox = item.ratings?.Fox ? `🦊 ${'★'.repeat(Math.round(item.ratings.Fox))}` : '';
+    const ratingBun = item.ratings?.Bun ? `🐰 ${'★'.repeat(Math.round(item.ratings.Bun))}` : '';
+    const ep = item.episode ? `<span style="color:var(--gold);font-size:12px">▶ ${item.episode}</span>` : '';
+    return `<div class="litem">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${item.title||'—'}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+          <span class="chip ${item.tv?'ctv':'cmovie'}">${item.tv?'Dizi':'Film'}</span>
+          ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
+          ${ep}
+        </div>
+        ${ratingFox||ratingBun ? `<div style="font-size:11px;color:var(--gold);margin-bottom:6px">${ratingFox} ${ratingBun}</div>` : ''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn bgold bxs" onclick="openEpisodeModal('${item.id}','${(item.title||'').replace(/'/g,'&apos;')}')" style="font-size:12px;padding:5px 10px">📍 Bölüm Güncelle</button>
+          <button class="btn bgreen bxs" onclick="markOngoingWatched('${item.id}')" style="font-size:12px;padding:5px 10px">✓ Tamamlandı</button>
+          <button class="btn bghost bxs" onclick="removeShared('${item.id}')" style="font-size:12px;padding:5px 10px">Kaldır</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openEpisodeModal(id, title){
+  const item = sharedLib[id];
+  const cur = item?.episode || '';
+  const ep = prompt(`"${title}" — Şu an nerede kaldınız?
+Örnek: S02E05 veya "3. Sezon 7. Bölüm"`, cur);
+  if(ep===null) return;
+  if(db) db.ref('sharedLib/'+id+'/episode').set(ep.trim());
+  if(db) db.ref('sharedLib/'+id+'/updatedAt').set(Date.now());
+  showToast('📍 Bölüm güncellendi!');
+}
+
+function markOngoingWatched(id){
+  if(!db) return;
+  db.ref('sharedLib/'+id).update({status:'watched', updatedAt:Date.now()});
+  showToast('✅ Tamamlandı olarak işaretlendi!');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1264,6 +1377,16 @@ async function saveItem(){
       savePersonal();
       if(activeTab()==='personal') renderPersonal();
       showToast('👤 Listemize eklendi!');
+
+    } else if(dest==='ongoing'){
+      if(!db){ showToast('❌ Firebase bağlantısı yok'); return; }
+      const prev2 = sharedLib[id]||{};
+      const ratings2 = Object.assign({}, prev2.ratings||{});
+      const wantedBy2 = prev2.wantedBy ? [...prev2.wantedBy] : [user.name];
+      if(!wantedBy2.includes(user.name)) wantedBy2.push(user.name);
+      if(rating>0) ratings2[user.name] = rating;
+      await db.ref('sharedLib/'+id).set(Object.assign({}, base, {status:'ongoing', ratings:ratings2, wantedBy:wantedBy2, updatedAt:Date.now()}));
+      showToast('▶ Devam Ediyoruz listesine eklendi!');
     }
   } catch(err){
     const m = String(err.message||err);
@@ -1432,7 +1555,15 @@ async function importSingleCSV(file){
     }
     saveMyLog(log);
     renderMyLog();
-    showToast(`✅ ${count} film eklendi! Posterler yükleniyor…`);
+    showToast(`✅ ${count} film eklendi! Partner için senkronize ediliyor…`);
+    // Partner'ın görmesi için Firebase'e tam veri yaz
+    if(db && user){
+      setTimeout(()=>{
+        db.ref('userLogs/'+user.name).set(log)
+          .then(()=>showToast('✅ Senkronize edildi! Partner artık görebilir.'))
+          .catch(e=>showToast('⚠️ Sync hatası: '+e.message));
+      }, 1000);
+    }
     fetchPostersForLog(toFetch.slice(0,150));
 
   } else if(fn.includes('ratings')){
