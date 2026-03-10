@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Seyir Defteri 🎬</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+<!-- ============================================================
+     🔧 FIREBASE YAPILANDIRMASI
+     firebase.google.com/console adresinden aldığın config'i
+     aşağıdaki FIREBASE_CONFIG nesnesine yapıştır.
+     ============================================================ -->
+<script>
+  const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyChsXOg7IowkwVU0N5PewUXKtKczELAyZw",
+    authDomain:        "fistiklafilm.firebaseapp.com",
+    databaseURL:       "https://fistiklafilm-default-rtdb.firebaseio.com",
+    projectId:         "fistiklafilm",
+    storageBucket:     "fistiklafilm.firebasestorage.app",
+    messagingSenderId: "703672297942",
+    appId:             "1:703672297942:web:e38bd927207834c48b5c77"
+  };
+</script>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0e0c;--bg2:#161412;--surface:#1d1a16;--s2:#252119;
+  --border:#2e2820;--bd2:#3d3528;
+  --text:#f0ead8;--t2:#a89070;--t3:#6b5840;
+  --gold:#e8b84b;--gold2:#c99a35;
+  --gbg:rgba(232,184,75,.1);--gbd:rgba(232,184,75,.25);
+  --rose:#e87884;--rbg:rgba(232,120,132,.1);--rbd:rgba(232,120,132,.25);
+  --green:#7bc67e;--grbg:rgba(123,198,126,.1);--grbd:rgba(123,198,126,.25);
+  --blue:#7eb8d4;--blbg:rgba(126,184,212,.1);--blbd:rgba(126,184,212,.25);
+  --r:14px;--sh:0 2px 20px rgba(0,0,0,.5);--sh2:0 8px 48px rgba(0,0,0,.7);
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button{cursor:pointer;font-family:'Nunito',sans-serif}
+input,textarea{font-family:'Nunito',sans-serif}
+a{color:var(--gold)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+
+.wrap{max-width:1100px;margin:0 auto;padding:0 22px 80px}
+
+.hdr{padding:26px 0 20px;border-bottom:1px solid var(--border);margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px}
+.lmark{width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:11px;display:grid;place-items:center;flex-shrink:0;box-shadow:0 2px 12px rgba(232,184,75,.3)}
+.lname{font-family:'Playfair Display',serif;font-size:22px}
+.lsub{font-size:11px;color:var(--t3);letter-spacing:.5px;text-transform:uppercase}
+
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:28px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:8px 16px;border-radius:10px;border:none;background:none;font-size:13px;font-weight:600;color:var(--t2);transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;cursor:pointer}
+.tab.on{background:var(--s2);color:var(--text);box-shadow:var(--sh)}
+.bcount{background:var(--bd2);color:var(--t2);font-size:10.5px;padding:2px 7px;border-radius:20px;font-weight:700;min-width:20px;text-align:center}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;border:none;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap;line-height:1;cursor:pointer}
+.bsm{padding:6px 13px;font-size:12.5px;border-radius:8px}
+.bxs{padding:4px 10px;font-size:11.5px;border-radius:7px}
+.bprimary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1400;font-weight:700}.bprimary:hover{filter:brightness(1.1)}
+.bprimary:disabled{background:var(--bd2);color:var(--t3);cursor:not-allowed;filter:none}
+.bghost{background:transparent;border:1px solid var(--bd2);color:var(--t2)}.bghost:hover{background:var(--s2);color:var(--text)}
+.bgreen{background:var(--grbg);color:var(--green);border:1px solid var(--grbd)}.bgreen:hover{filter:brightness(1.15)}
+.bblue{background:var(--blbg);color:var(--blue);border:1px solid var(--blbd)}.bblue:hover{filter:brightness(1.15)}
+.bgold{background:var(--gbg);color:var(--gold);border:1px solid var(--gbd)}.bgold:hover{filter:brightness(1.15)}
+.bred{background:rgba(220,80,80,.1);color:#e07070;border:1px solid rgba(220,80,80,.25)}.bred:hover{filter:brightness(1.15)}
+
+.sinp-w{position:relative;flex:1;max-width:460px}
+.sinp{width:100%;border:1px solid var(--bd2);border-radius:11px;padding:12px 18px 12px 44px;font-size:14px;background:var(--surface);outline:none;transition:all .2s;color:var(--text)}
+.sinp:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,184,75,.1)}
+.sico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
+.ttoggle{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:3px}
+.tbtn{padding:7px 14px;border-radius:8px;border:none;background:none;font-size:12.5px;font-weight:600;color:var(--t2);transition:all .2s;cursor:pointer}
+.tbtn.on{background:var(--s2);color:var(--text)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:15px}
+.card{background:var(--surface);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);transition:transform .2s,box-shadow .2s;position:relative;cursor:pointer}
+.card:hover{transform:translateY(-4px);box-shadow:var(--sh2)}
+.cimg{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--s2);display:block}
+.cph{width:100%;aspect-ratio:2/3;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:36px}
+.cbody{padding:10px}
+.ctitle{font-size:12px;font-weight:700;line-height:1.35;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cmeta{font-size:11px;color:var(--t3);display:flex;align-items:center;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.chip{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.ctv{color:var(--blue);background:var(--blbg)}.cmovie{color:var(--green);background:var(--grbg)}
+.card-badge{position:absolute;top:7px;left:7px;padding:3px 7px;border-radius:5px;font-size:10px;font-weight:700}
+
+.lrow{background:var(--surface);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);display:flex;transition:box-shadow .2s;margin-bottom:10px}
+.lrow:hover{box-shadow:var(--sh2)}
+.limg{width:68px;min-width:68px;aspect-ratio:2/3;object-fit:cover;background:var(--s2)}
+.lph{width:68px;min-width:68px;aspect-ratio:2/3;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:22px}
+.lbody{padding:12px 15px;flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.ltitle{font-size:14px;font-weight:700;line-height:1.3}
+.lmeta{font-size:12px;color:var(--t3);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.lratings{display:flex;gap:12px;flex-wrap:wrap;margin-top:2px}
+.lrating-item{display:flex;align-items:center;gap:4px;font-size:12px}
+.lnote{font-size:12px;color:var(--t2);background:var(--s2);border-radius:7px;padding:6px 10px;line-height:1.55;font-style:italic;border-left:2px solid var(--bd2)}
+.lactions{display:flex;gap:7px;margin-top:4px;flex-wrap:wrap}
+.ladded{font-size:11.5px;color:var(--t3);display:flex;align-items:center;gap:5px}
+
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;flex-shrink:0;color:#1a1400}
+
+.stars{display:flex;gap:2px;align-items:center;flex-wrap:wrap}
+.star{font-size:18px;cursor:pointer;transition:transform .1s;line-height:1;user-select:none;color:var(--bd2)}
+.star.lit{color:var(--gold)}
+.star:hover{transform:scale(1.2)}
+.rval{font-size:12px;font-weight:700;color:var(--gold);margin-left:4px}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+.modal{background:var(--bg2);border:1px solid var(--bd2);border-radius:20px;width:100%;max-width:510px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.8)}
+.mhdr{padding:22px 22px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.mx{background:var(--surface);border:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-size:20px;color:var(--t2);cursor:pointer}
+.mx:hover{background:var(--s2)}
+.mbody{padding:16px 22px 24px}
+.mtitle{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:4px;line-height:1.25}
+.mmeta{font-size:12px;color:var(--t3);margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.moverview{font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:16px;max-height:80px;overflow-y:auto}
+.msec{margin-bottom:14px}
+.mlbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);margin-bottom:8px}
+.mta{width:100%;border:1px solid var(--bd2);border-radius:9px;padding:10px 12px;font-size:13px;resize:vertical;min-height:64px;outline:none;color:var(--text);background:var(--surface);transition:border-color .2s;line-height:1.6}
+.mta:focus{border-color:var(--gold)}
+.mfooter{display:flex;justify-content:flex-end;gap:9px;padding-top:12px;border-top:1px solid var(--border)}
+.dest-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dest-btn{padding:10px 12px;border-radius:10px;border:1px solid var(--bd2);background:var(--surface);color:var(--t2);font-size:12.5px;font-weight:600;display:flex;flex-direction:column;align-items:flex-start;gap:2px;transition:all .2s;text-align:left;cursor:pointer;line-height:1.3}
+.dest-btn:hover{border-color:var(--gold);color:var(--text)}
+.dest-btn.on{border-color:var(--gold);background:var(--gbg);color:var(--gold)}
+.dest-btn small{font-size:10.5px;font-weight:400;opacity:.65}
+
+.sechdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.sectitle{font-family:'Playfair Display',serif;font-size:22px}
+.seccnt{font-size:12.5px;color:var(--t3)}
+
+.fbar{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap}
+.fc{padding:5px 13px;border-radius:20px;border:1px solid var(--bd2);background:var(--surface);font-size:12.5px;color:var(--t2);transition:all .15s;cursor:pointer}
+.fc.on{background:var(--gbg);color:var(--gold);border-color:var(--gbd)}
+.fc:hover:not(.on){background:var(--s2)}
+
+.empty{text-align:center;padding:60px 20px}
+.eico{font-size:44px;margin-bottom:12px;opacity:.4}
+.etxt{font-size:15px;font-weight:600;color:var(--t2);margin-bottom:5px}
+.esub{font-size:13px;color:var(--t3)}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s2);border:1px solid var(--bd2);color:var(--text);padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:var(--sh2);z-index:200;display:flex;align-items:center;gap:9px;animation:su .22s ease;max-width:320px}
+@keyframes su{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.spin{display:inline-block;width:20px;height:20px;border:2.5px solid var(--bd2);border-top-color:var(--gold);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* sync dot */
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* setup & firebase config screens */
+.center-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(232,184,75,.06),transparent 60%)}
+.setup-card{background:var(--bg2);border:1px solid var(--bd2);border-radius:22px;padding:32px 28px;width:100%;max-width:420px;box-shadow:var(--sh2)}
+.setup-title{font-family:'Playfair Display',serif;font-size:26px;text-align:center;margin-bottom:8px}
+.setup-sub{font-size:13.5px;color:var(--t2);text-align:center;margin-bottom:26px;line-height:1.6}
+.setup-lbl{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);margin-bottom:8px}
+.setup-in{width:100%;border:1px solid var(--bd2);border-radius:10px;padding:11px 14px;font-size:14px;background:var(--surface);outline:none;color:var(--text);transition:border-color .2s;margin-bottom:14px}
+.setup-in:focus{border-color:var(--gold)}
+.setup-hint{font-size:12px;color:var(--t3);line-height:1.7;margin-top:8px}
+.setup-err{font-size:12.5px;color:var(--rose);margin-top:8px;padding:9px 12px;background:var(--rbg);border-radius:8px;border:1px solid var(--rbd)}
+.color-row{display:flex;gap:10px;margin-bottom:18px}
+
+/* firebase config screen */
+.cfg-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+.cfg-num{width:26px;height:26px;border-radius:50%;background:var(--gbg);border:1px solid var(--gbd);color:var(--gold);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.cfg-text{font-size:13px;color:var(--t2);line-height:1.6}
+.cfg-code{background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12px;color:var(--gold);margin-top:6px;word-break:break-all;line-height:1.6}
+
+.users-pill{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd2);border-radius:30px;padding:5px 12px}
+
+@media(max-width:600px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px}
+  .wrap{padding:0 14px 60px}
+  .dest-opts{grid-template-columns:1fr}
+  .tab{padding:7px 11px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── FIREBASE CONFIG SCREEN ─────────────────────────────── -->
+<div id="configScreen" class="center-screen" style="display:none">
+  <div class="setup-card" style="max-width:480px">
+    <div style="text-align:center;margin-bottom:20px;font-size:40px">🔧</div>
+    <div class="setup-title" style="font-size:22px">Firebase Kurulumu Gerekli</div>
+    <div class="setup-sub" style="font-size:13px">HTML dosyasındaki <code style="color:var(--gold);background:var(--s2);padding:2px 6px;border-radius:4px">FIREBASE_CONFIG</code> değerlerini doldurmadın. Aşağıdaki adımları izle:</div>
+
+    <div class="cfg-step">
+      <div class="cfg-num">1</div>
+      <div class="cfg-text">
+        <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> adresine git ve <strong style="color:var(--text)">Proje Oluştur</strong>'a tıkla. Bir isim ver (örn. "cinemate"), Google Analytics'i kapat ve oluştur.
+      </div>
+    </div>
+
+    <div class="cfg-step">
+      <div class="cfg-num">2</div>
+      <div class="cfg-text">
+        Sol menüde <strong style="color:var(--text)">Realtime Database</strong>'e tıkla → <strong style="color:var(--text)">Veritabanı Oluştur</strong> → Lokasyon seç (herhangi biri olur) → <strong style="color:var(--text)">Test modunda başla</strong> seç → Etkinleştir.
+      </div>
+    </div>
+
+    <div class="cfg-step">
+      <div class="cfg-num">3</div>
+      <div class="cfg-text">
+        Sol üstteki ⚙️ Proje Ayarları → <strong style="color:var(--text)">Web Uygulaması Ekle</strong> (&lt;/&gt; ikonu) → İsim ver → Kaydet. Sana bir <code style="color:var(--gold)">firebaseConfig</code> nesnesi verecek. Onu kopyala.
+      </div>
+    </div>
+
+    <div class="cfg-step">
+      <div class="cfg-num">4</div>
+      <div class="cfg-text">
+        Bu HTML dosyasını bir metin editörüyle aç (Notepad, VSCode, vb.) ve en üstteki <code style="color:var(--gold)">FIREBASE_CONFIG</code> nesnesindeki değerleri kopyaladıklarınla değiştir. Sonra dosyayı <a href="https://app.netlify.com/drop" target="_blank">app.netlify.com/drop</a>'a sürükle-bırak.
+      </div>
+    </div>
+
+    <div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:14px;margin-top:8px">
+      <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Örnek yapı:</div>
+      <div class="cfg-code">const FIREBASE_CONFIG = {<br>
+&nbsp;&nbsp;apiKey: "AIzaSy...",<br>
+&nbsp;&nbsp;authDomain: "proje.firebaseapp.com",<br>
+&nbsp;&nbsp;databaseURL: "https://proje-default-rtdb.firebaseio.com",<br>
+&nbsp;&nbsp;projectId: "proje",<br>
+&nbsp;&nbsp;...<br>
+};</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PIN SCREEN ─────────────────────────────────────────── -->
+<div id="pinScreen" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(232,184,75,.06),var(--bg) 60%)">
+  <div class="setup-card" style="max-width:360px;text-align:center">
+    <div style="display:flex;justify-content:center;margin-bottom:18px">
+      <div class="lmark" style="width:52px;height:52px;border-radius:15px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1a1400" stroke-width="2.2" stroke-linecap="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="setup-title" style="font-size:22px">Seyir Defteri</div>
+    <div class="setup-sub" style="margin-bottom:22px">Özel erişim kodu girin 🔒</div>
+    <input class="setup-in" type="password" id="pinInput" placeholder="••••••" maxlength="20" style="text-align:center;font-size:20px;letter-spacing:6px"/>
+    <div id="pinErr" class="setup-err" style="display:none;text-align:center">❌ Hatalı kod</div>
+    <button class="btn bprimary" style="width:100%;justify-content:center;margin-top:16px;padding:12px;font-size:15px" onclick="checkPin()">Giriş →</button>
+  </div>
+</div>
+
+<!-- ── USER SELECT SCREEN ──────────────────────────────────── -->
+<div id="setupScreen" style="position:fixed;inset:0;background:var(--bg);z-index:998;display:none;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(232,184,75,.06),var(--bg) 60%)">
+  <div class="setup-card" style="max-width:380px;text-align:center">
+    <div style="display:flex;justify-content:center;margin-bottom:18px">
+      <div class="lmark" style="width:52px;height:52px;border-radius:15px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1a1400" stroke-width="2.2" stroke-linecap="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="setup-title">Seyir Defteri</div>
+    <div class="setup-sub" style="margin-bottom:24px">Sen kimsin? 🎬</div>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button onclick="selectUser('Fox')" style="flex:1;padding:20px 12px;border-radius:14px;border:2px solid var(--bd2);background:var(--surface);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:10px" onmouseover="this.style.borderColor='#7eb8d4'" onmouseout="this.style.borderColor='var(--bd2)'">
+        <div style="width:52px;height:52px;border-radius:50%;background:#7eb8d4;display:flex;align-items:center;justify-content:center;font-size:22px;color:#1a1400;font-weight:800">F</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">Fox</div>
+        <div style="font-size:11px;color:var(--t3)">🦊</div>
+      </button>
+      <button onclick="selectUser('Bun')" style="flex:1;padding:20px 12px;border-radius:14px;border:2px solid var(--bd2);background:var(--surface);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:10px" onmouseover="this.style.borderColor='#b48be8'" onmouseout="this.style.borderColor='var(--bd2)'">
+        <div style="width:52px;height:52px;border-radius:50%;background:#b48be8;display:flex;align-items:center;justify-content:center;font-size:22px;color:#1a1400;font-weight:800">B</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">Bun</div>
+        <div style="font-size:11px;color:var(--t3)">🐰</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ───────────────────────────────────────────── -->
+<div id="mainApp" style="display:none">
+  <div class="wrap">
+    <div class="hdr">
+      <div class="logo">
+        <div class="lmark">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1400" stroke-width="2.2" stroke-linecap="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </div>
+        <div><div class="lname">Seyir Defteri</div><div class="lsub">Film & Dizi Takipçisi</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div id="syncIndicator" style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--t3)">
+          <div class="sync-dot"></div> Canlı sync
+        </div>
+        <div style="text-align:right">
+          <div id="hdrStats" style="font-size:13px;font-weight:600;color:var(--t2)"></div>
+          <div id="hdrRating" style="font-size:12px;color:var(--gold);display:none"></div>
+        </div>
+        <div class="users-pill">
+          <div id="hdrAvatar" class="av" style="width:28px;height:28px;font-size:12px"></div>
+          <span id="hdrName" style="font-size:13px;font-weight:700"></span>
+          <span id="hdrOtherAv" style="margin-left:2px"></span>
+        </div>
+        <button class="btn bghost bsm" style="font-size:12px" onclick="switchUser()">Değiştir</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab on" id="tab-search"    onclick="showTab('search',this)">🔍 Ara</button>
+      <button class="tab"    id="tab-watched"   onclick="showTab('watched',this)">✓ İzledik <span class="bcount" id="cnt-watched">0</span></button>
+      <button class="tab"    id="tab-watchlist" onclick="showTab('watchlist',this)">🎬 İzleyeceğiz <span class="bcount" id="cnt-watchlist">0</span></button>
+      <button class="tab"    id="tab-suggest"   onclick="showTab('suggest',this)">💡 Öneriler <span class="bcount" id="cnt-suggest">0</span></button>
+      <button class="tab"    id="tab-personal"  onclick="showTab('personal',this)">👤 Benim Listem <span class="bcount" id="cnt-personal">0</span></button>
+    </div>
+
+    <!-- SEARCH -->
+    <div id="pane-search">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-bottom:20px">
+        <div class="sinp-w">
+          <span class="sico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+          <input class="sinp" id="searchInput" type="text" placeholder="Film veya dizi ara…" oninput="onSearchInput()"/>
+        </div>
+        <div class="ttoggle">
+          <button class="tbtn on" onclick="setSType('multi',this)">Hepsi</button>
+          <button class="tbtn"    onclick="setSType('movie',this)">🎬</button>
+          <button class="tbtn"    onclick="setSType('tv',this)">📺</button>
+        </div>
+      </div>
+      <div id="searchErr" style="display:none;background:var(--rbg);border:1px solid var(--rbd);border-radius:10px;padding:10px 15px;margin-bottom:16px;font-size:13px;color:var(--rose)"></div>
+      <div id="searchLoading" style="display:none;text-align:center;padding:48px 0"><span class="spin"></span></div>
+      <div id="searchGrid" class="grid"></div>
+      <div id="searchEmpty" class="empty" style="display:none"><div class="eico">🎭</div><div class="etxt" id="searchEmptyTxt">Sonuç bulunamadı</div><div class="esub">İngilizce adını da dene</div></div>
+      <div id="searchPh" class="empty" style="padding-top:68px"><div class="eico">🎬</div><div class="etxt">Film veya dizi ara</div><div class="esub">Türkçe veya İngilizce</div></div>
+    </div>
+
+    <!-- WATCHED -->
+    <div id="pane-watched" style="display:none">
+      <div class="sechdr"><div class="sectitle">İkimiz İzledik</div><div class="seccnt" id="watchedCnt"></div></div>
+      <div class="fbar">
+        <button class="fc on" onclick="setFilter('watched','all',this)">Tümü</button>
+        <button class="fc"    onclick="setFilter('watched','movie',this)">🎬 Filmler</button>
+        <button class="fc"    onclick="setFilter('watched','tv',this)">📺 Diziler</button>
+      </div>
+      <div id="watchedList"></div>
+    </div>
+
+    <!-- WATCHLIST -->
+    <div id="pane-watchlist" style="display:none">
+      <div class="sechdr"><div class="sectitle">Birlikte İzleyeceğiz</div><div class="seccnt" id="watchlistCnt"></div></div>
+      <div class="fbar">
+        <button class="fc on" onclick="setFilter('watchlist','all',this)">Tümü</button>
+        <button class="fc"    onclick="setFilter('watchlist','movie',this)">🎬 Filmler</button>
+        <button class="fc"    onclick="setFilter('watchlist','tv',this)">📺 Diziler</button>
+      </div>
+      <div id="watchlistList"></div>
+    </div>
+
+    <!-- SUGGESTIONS -->
+    <div id="pane-suggest" style="display:none">
+      <div class="sechdr"><div><div class="sectitle">Öneri Kutusu 💡</div><div class="seccnt" style="margin-top:3px">Birbirinize film/dizi önerin</div></div></div>
+      <div id="suggestList"></div>
+    </div>
+
+    <!-- PERSONAL -->
+    <div id="pane-personal" style="display:none">
+      <div class="sechdr"><div><div class="sectitle">Benim Listem 👤</div><div class="seccnt" style="margin-top:3px">Sadece sen görürsün</div></div></div>
+      <div id="personalList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="mhdr">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div id="mPoster"></div>
+        <div><div class="mtitle" id="mTitle"></div><div class="mmeta" id="mMeta"></div></div>
+      </div>
+      <button class="mx" onclick="closeModal()">×</button>
+    </div>
+    <div class="mbody">
+      <p class="moverview" id="mOverview" style="display:none"></p>
+      <div class="msec">
+        <div class="mlbl">Nereye ekleyelim?</div>
+        <div class="dest-opts">
+          <button class="dest-btn" id="dest-shared-watched"   onclick="setDest('shared-watched')">✓ İkimiz İzledik<small>Ortak arşiv</small></button>
+          <button class="dest-btn" id="dest-shared-watchlist" onclick="setDest('shared-watchlist')">🎬 Birlikte İzleyeceğiz<small>Ortak liste</small></button>
+          <button class="dest-btn" id="dest-suggest"          onclick="setDest('suggest')">💡 Öneri Olarak At<small>Onay beklesin</small></button>
+          <button class="dest-btn" id="dest-personal"         onclick="setDest('personal')">👤 Sadece Benim<small>Özel liste</small></button>
+        </div>
+      </div>
+      <div class="msec" id="ratingSection" style="display:none">
+        <div class="mlbl">Puanım</div>
+        <div class="stars" id="starsRow"></div>
+      </div>
+      <div class="msec">
+        <div class="mlbl">Notum</div>
+        <textarea class="mta" id="mNote" rows="2" placeholder="Düşüncelerini yaz…"></textarea>
+      </div>
+      <div class="mfooter">
+        <button class="btn bghost bsm" onclick="closeModal()">İptal</button>
+        <button class="btn bprimary bsm" id="mSaveBtn" onclick="saveItem()" disabled>Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="display:none"></div>
+
+<script>
+const TMDB = 'https://api.themoviedb.org/3';
+const TMDB_KEY = '51e0d6b5776bdcb134ad7269ffcb0734';
+// Şifreyi değiştirmek için: şifreni SHA-256 ile hash'le ve aşağıya yapıştır
+// Hash üretmek için: https://emn178.github.io/online-tools/sha256.html
+const ACCESS_PIN_HASH = '0a6aa2b77c5e0336ce772a4792c89e941b59e79b301952c608292056e029579c';
+const IMG  = 'https://image.tmdb.org/t/p/w500';
+const COLORS = [
+  {id:'rose', bg:'#e87884'},{id:'gold',bg:'#e8b84b'},
+  {id:'blue', bg:'#7eb8d4'},{id:'green',bg:'#7bc67e'},
+  {id:'lila', bg:'#b48be8'},
+];
+// Sabit kullanıcılar
+const FIXED_USERS = [
+  {name:'Fox', color:'blue',  emoji:'🦊'},
+  {name:'Bun', color:'lila',  emoji:'🐰'},
+];
+function colorBg(id){ return COLORS.find(c=>c.id===id)?.bg||'#e8b84b'; }
+
+let db   = null;
+let user = null;
+
+// shared data (Firebase)
+let sharedLib   = {};
+let suggestions = [];
+// personal data (localStorage)
+let personalLib = {};
+
+let currentItem  = null;
+let currentDest  = '';
+let currentRating = 0;
+let sType  = 'multi';
+let filters = {watched:'all', watchlist:'all'};
+let debTimer = null, toastTimer = null;
+
+// ── BOOT ──────────────────────────────────────────────────────
+window.onload = () => {
+  // Check firebase config
+  if (FIREBASE_CONFIG.apiKey === 'BURAYA_API_KEY') {
+    document.getElementById('configScreen').style.display = 'flex';
+    return;
+  }
+  // Init Firebase
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+  } catch(e) {
+    document.getElementById('configScreen').style.display = 'flex';
+    return;
+  }
+
+  // PIN kontrolü
+  if (!lsGet('cm_pin_ok')) {
+    document.getElementById('pinScreen').style.display = 'flex';
+    return;
+  }
+
+  const u = lsGet('cm_user');
+  if (u) { user = u; startApp(); }
+  else {
+    document.getElementById('setupScreen').style.display = 'flex';
+  }
+};
+
+async function checkPin(){
+  const val = document.getElementById('pinInput').value.trim();
+  if(!val) return;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash === ACCESS_PIN_HASH){
+    lsSet('cm_pin_ok', true);
+    document.getElementById('pinScreen').style.display='none';
+    const u = lsGet('cm_user');
+    if(u){ user=u; startApp(); }
+    else { document.getElementById('setupScreen').style.display='flex'; }
+    
+  } else {
+    const err = document.getElementById('pinErr');
+    err.style.display='block';
+    document.getElementById('pinInput').value='';
+    setTimeout(()=>err.style.display='none', 2000);
+  }
+}
+
+// ── LOCAL STORAGE ──────────────────────────────────────────────
+function lsGet(k){ try{return JSON.parse(localStorage.getItem(k));}catch{return null;} }
+function lsSet(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch{} }
+
+// ── KULLANICI SEÇİMİ ──────────────────────────────────────────
+function selectUser(name){
+  const u = FIXED_USERS.find(u=>u.name===name);
+  if(!u) return;
+  user = {name:u.name, color:u.color, apiKey:TMDB_KEY};
+  lsSet('cm_user', user);
+  document.getElementById('setupScreen').style.display='none';
+  startApp();
+}
+
+function switchUser(){
+  lsSet('cm_user',null); user=null;
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('setupScreen').style.display='flex';
+  document.getElementById('nameInput').value='';
+  
+}
+
+// ── APP START & FIREBASE LISTENERS ─────────────────────────────
+function startApp(){
+  document.getElementById('mainApp').style.display='block';
+  updateHeader();
+  loadPersonal();
+
+  // Real-time listeners
+  db.ref('sharedLib').on('value', snap => {
+    sharedLib = snap.val() || {};
+    updateCounts();
+    rerenderActive();
+  });
+  db.ref('suggestions').on('value', snap => {
+    const raw = snap.val() || {};
+    suggestions = Object.values(raw);
+    updateCounts();
+    if(document.getElementById('tab-suggest').classList.contains('on')) renderSuggestions();
+  });
+}
+
+function loadPersonal(){
+  const p = lsGet('cm_personal_'+user.name);
+  if(p) personalLib = p;
+}
+function savePersonal(){ lsSet('cm_personal_'+user.name, personalLib); }
+
+function rerenderActive(){
+  const active = document.querySelector('.tab.on');
+  if(!active) return;
+  const id = active.id.replace('tab-','');
+  if(id==='watched')   renderWatched();
+  if(id==='watchlist') renderWatchlist();
+  if(id==='suggest')   renderSuggestions();
+  const q = document.getElementById('searchInput').value.trim();
+  if(id==='search' && q.length>1) refreshSearchBadges();
+}
+
+// ── HEADER / COUNTS ────────────────────────────────────────────
+function updateHeader(){
+  if(!user) return;
+  const av = document.getElementById('hdrAvatar');
+  av.textContent = user.name[0].toUpperCase();
+  av.style.background = colorBg(user.color);
+  document.getElementById('hdrName').textContent = user.name;
+  document.getElementById('hdrName').style.color = colorBg(user.color);
+  // Diğer kullanıcıyı göster
+  const other = FIXED_USERS.find(u=>u.name!==user.name);
+  const otherEl = document.getElementById('hdrOtherAv');
+  if(other && otherEl){
+    otherEl.innerHTML = `<div class="av" style="width:24px;height:24px;font-size:10px;background:${colorBg(other.color)};opacity:.55">${other.name[0]}</div>`;
+  }
+}
+
+function updateCounts(){
+  const w  = Object.values(sharedLib).filter(e=>e.status==='watched');
+  const wl = Object.values(sharedLib).filter(e=>e.status==='watchlist');
+  document.getElementById('hdrStats').textContent = `${w.length} izlendi · ${wl.length} listede`;
+  document.getElementById('cnt-watched').textContent   = w.length;
+  document.getElementById('cnt-watchlist').textContent = wl.length;
+  document.getElementById('cnt-suggest').textContent   = suggestions.length;
+  document.getElementById('cnt-personal').textContent  = Object.keys(personalLib).length;
+  const rated = w.filter(e=>e.ratings&&e.ratings[user.name]>0);
+  const rEl = document.getElementById('hdrRating');
+  if(rated.length){
+    const avg = rated.reduce((s,e)=>s+e.ratings[user.name],0)/rated.length;
+    rEl.textContent=`Ort. puanın ★ ${avg.toFixed(1)}`; rEl.style.display='block';
+  } else rEl.style.display='none';
+}
+
+// ── TABS ───────────────────────────────────────────────────────
+function showTab(name, btn){
+  ['search','watched','watchlist','suggest','personal'].forEach(t=>{
+    document.getElementById('pane-'+t).style.display = t===name?'block':'none';
+    document.getElementById('tab-'+t).classList.remove('on');
+  });
+  btn.classList.add('on');
+  if(name==='watched')   renderWatched();
+  if(name==='watchlist') renderWatchlist();
+  if(name==='suggest')   renderSuggestions();
+  if(name==='personal')  renderPersonal();
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────
+function onSearchInput(){
+  const q = document.getElementById('searchInput').value.trim();
+  clearTimeout(debTimer);
+  if(q.length<2){ clearSearch(); return; }
+  debTimer = setTimeout(()=>doSearch(q), 450);
+}
+
+function clearSearch(){
+  document.getElementById('searchGrid').innerHTML='';
+  document.getElementById('searchEmpty').style.display='none';
+  document.getElementById('searchPh').style.display='block';
+  document.getElementById('searchErr').style.display='none';
+  document.getElementById('searchLoading').style.display='none';
+}
+
+function setSType(type, btn){
+  sType=type;
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const q = document.getElementById('searchInput').value.trim();
+  if(q.length>1) doSearch(q);
+}
+
+async function doSearch(q){
+  document.getElementById('searchPh').style.display='none';
+  document.getElementById('searchEmpty').style.display='none';
+  document.getElementById('searchErr').style.display='none';
+  document.getElementById('searchGrid').innerHTML='';
+  document.getElementById('searchLoading').style.display='block';
+  try {
+    const ep = sType==='multi'
+      ? `${TMDB}/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&include_adult=false`
+      : `${TMDB}/search/${sType}?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&include_adult=false`;
+    const res = await fetch(ep);
+    const data = await res.json();
+    document.getElementById('searchLoading').style.display='none';
+    if(res.status===401){ document.getElementById('searchErr').textContent='❌ API key geçersiz.'; document.getElementById('searchErr').style.display='block'; return; }
+    const items = (data.results||[]).filter(r=>r.media_type!=='person'&&(r.title||r.name)).slice(0,20);
+    if(!items.length){ document.getElementById('searchEmptyTxt').textContent=`"${q}" için sonuç bulunamadı`; document.getElementById('searchEmpty').style.display='block'; return; }
+    renderSearchGrid(items);
+  } catch {
+    document.getElementById('searchLoading').style.display='none';
+    document.getElementById('searchErr').textContent='⚠️ Bağlantı hatası.';
+    document.getElementById('searchErr').style.display='block';
+  }
+}
+
+function refreshSearchBadges(){
+  const q = document.getElementById('searchInput').value.trim();
+  if(q.length>1) doSearch(q);
+}
+
+// Item cache - onclick'te JSON yerine index kullan
+const _itemCache = {};
+let _itemIdx = 0;
+function cacheItem(item){
+  const key = 'i'+(++_itemIdx);
+  _itemCache[key] = item;
+  return key;
+}
+function getCached(key){ return _itemCache[key]; }
+
+function renderSearchGrid(items){
+  const grid = document.getElementById('searchGrid');
+  grid.innerHTML = items.map(item=>{
+    const tv = item.media_type==='tv'||(!!item.first_air_date&&!item.release_date);
+    const id = String(item.id);
+    const se = sharedLib[id];
+    const poster = item.poster_path?`<img class="cimg" src="${IMG}${item.poster_path}" loading="lazy" alt=""/>` : `<div class="cph">${tv?'📺':'🎬'}</div>`;
+    const yr = (item.release_date||item.first_air_date||'').slice(0,4);
+    const badge = se?`<div class="card-badge" style="background:${se.status==='watched'?'var(--grbg)':'var(--blbg)'};color:${se.status==='watched'?'var(--green)':'var(--blue)'};border:1px solid ${se.status==='watched'?'var(--grbd)':'var(--blbd)'}">${se.status==='watched'?'✓':'🎬'}</div>`:'';
+    const btnCls = se?(se.status==='watched'?'bgreen':'bblue'):'bghost';
+    const btnTxt = se?(se.status==='watched'?'✓ İzledik':'🎬 Listede'):'+ Ekle';
+    const ck = cacheItem(item);
+    return `<div class="card" onclick="openModal(getCached('${ck}'))">
+      ${poster}${badge}
+      <div class="cbody">
+        <div class="ctitle">${item.title||item.name||'—'}</div>
+        <div class="cmeta"><span class="chip ${tv?'ctv':'cmovie'}">${tv?'Dizi':'Film'}</span>${yr?`<span>${yr}</span>`:''}${item.vote_average>0?`<span>⭐${item.vote_average.toFixed(1)}</span>`:''}</div>
+        <button class="btn bxs ${btnCls}" onclick="event.stopPropagation();openModal(getCached('${ck}'))">${btnTxt}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MODAL ──────────────────────────────────────────────────────
+function openModal(raw){
+  currentItem = (typeof raw==='string') ? JSON.parse(raw) : raw;
+  if(!currentItem){ console.error('openModal: item yok'); return; }
+  const tv = currentItem.media_type==='tv'||(!!currentItem.first_air_date&&!currentItem.release_date);
+  const id = String(currentItem.id||currentItem.itemId||'');
+  const se = sharedLib[id];
+  const pe = personalLib[id];
+  currentDest   = se?.status==='watched'?'shared-watched': se?.status==='watchlist'?'shared-watchlist': pe?'personal':'';
+  currentRating = se?.ratings?.[user.name]||0;
+
+  document.getElementById('mTitle').textContent = currentItem.title||currentItem.name||'—';
+  const yr = (currentItem.release_date||currentItem.first_air_date||'').slice(0,4);
+  document.getElementById('mMeta').innerHTML =
+    `<span class="chip ${tv?'ctv':'cmovie'}">${tv?'Dizi':'Film'}</span>${yr?`<span>${yr}</span>`:''}${currentItem.vote_average>0?`<span>⭐${currentItem.vote_average.toFixed(1)}</span>`:''}`;
+  const ov = currentItem.overview||'';
+  const ovEl = document.getElementById('mOverview');
+  ovEl.textContent = ov.length>240?ov.slice(0,240)+'…':ov;
+  ovEl.style.display = ov?'block':'none';
+  document.getElementById('mPoster').innerHTML = currentItem.poster_path
+    ? `<img src="${IMG}${currentItem.poster_path}" style="width:60px;border-radius:9px;object-fit:cover;flex-shrink:0" alt=""/>`
+    : `<div style="width:60px;height:90px;background:var(--s2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:24px">${tv?'📺':'🎬'}</div>`;
+  document.getElementById('mNote').value = se?.notes?.[user.name]||pe?.note||'';
+  updateDestUI(); buildStars();
+  document.getElementById('modal').style.display='flex';
+}
+
+function closeModal(){ document.getElementById('modal').style.display='none'; currentItem=null; }
+
+function setDest(d){ currentDest = currentDest===d?'':d; updateDestUI(); }
+
+function updateDestUI(){
+  ['shared-watched','shared-watchlist','suggest','personal'].forEach(d=>{
+    document.getElementById('dest-'+d).classList.toggle('on', currentDest===d);
+  });
+  document.getElementById('ratingSection').style.display = currentDest==='shared-watched'?'block':'none';
+  document.getElementById('mSaveBtn').disabled = !currentDest;
+}
+
+function buildStars(){
+  const row = document.getElementById('starsRow'); row.innerHTML='';
+  for(let i=1;i<=10;i++){
+    const s=document.createElement('span');
+    s.className='star'+(i<=currentRating?' lit':''); s.textContent='★';
+    s.addEventListener('mouseenter',()=>hlStars(i));
+    s.addEventListener('mouseleave',()=>hlStars(currentRating));
+    s.addEventListener('click',()=>{ currentRating=currentRating===i?0:i; hlStars(currentRating); updRval(); });
+    row.appendChild(s);
+  }
+  const rv=document.createElement('span'); rv.className='rval'; rv.id='rval';
+  rv.textContent=currentRating>0?`${currentRating}/10`:''; row.appendChild(rv);
+}
+function hlStars(n){ document.querySelectorAll('#starsRow .star').forEach((s,i)=>s.className='star'+(i<n?' lit':'')); }
+function updRval(){ const r=document.getElementById('rval'); if(r) r.textContent=currentRating>0?`${currentRating}/10`:''; }
+
+// ── SAVE ────────────────────────────────────────────────────────
+async function saveItem(){
+  if(!currentItem||!currentDest) return;
+  const id   = String(currentItem.id||currentItem.itemId||'');
+  const tv   = !!(currentItem.media_type==='tv'||(!!currentItem.first_air_date&&!currentItem.release_date));
+  const note = document.getElementById('mNote').value.trim();
+  const base = {
+    id,
+    title: currentItem.title||currentItem.name||'—',
+    year:  (currentItem.release_date||currentItem.first_air_date||'').slice(0,4),
+    poster: currentItem.poster_path||'',
+    tv,
+    raw: JSON.stringify(currentItem)
+  };
+
+  closeModal();
+
+  try {
+    if(currentDest==='shared-watched'||currentDest==='shared-watchlist'){
+      const status = currentDest==='shared-watched'?'watched':'watchlist';
+      const prev   = sharedLib[id]||{};
+      const ratings = {...(prev.ratings||{})};
+      if(currentRating>0) ratings[user.name] = currentRating;
+      const notes = {...(prev.notes||{})};
+      if(note) notes[user.name] = note;
+      const updated = {...base, status, addedBy:user.name, ratings, notes};
+      await db.ref('sharedLib/'+id).set(updated);
+      showToast(status==='watched'?'✓ Ortak arşive eklendi!':'🎬 Birlikte izleneceklere eklendi!');
+
+    } else if(currentDest==='suggest'){
+      const key = 'sug_'+Date.now();
+      const sugData = {...base, suggestedBy:user.name, note:note||'', ts:Date.now()};
+      await db.ref('suggestions/'+key).set(sugData);
+      showToast('💡 Öneri atıldı!');
+
+    } else if(currentDest==='personal'){
+      const newEntry = {...base, note:note||'', status:'personal'};
+      personalLib[id] = newEntry;
+      savePersonal();
+      updateCounts();
+      renderPersonal();
+      showToast('👤 Kişisel listeye eklendi!');
+    }
+  } catch(e){
+    showToast('❌ Hata: '+(e.message||e));
+    console.error('saveItem error:', e);
+  }
+}
+
+
+// ── RENDER LISTS ────────────────────────────────────────────────
+function setFilter(list, val, btn){
+  filters[list]=val;
+  btn.closest('.fbar').querySelectorAll('.fc').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if(list==='watched') renderWatched(); else renderWatchlist();
+}
+
+function avHtml(name, colorId, size=22){
+  return `<div class="av" style="width:${size}px;height:${size}px;font-size:${size*.42}px;background:${colorBg(colorId)}">${(name||'?')[0].toUpperCase()}</div>`;
+}
+
+function renderWatched(){
+  let items = Object.values(sharedLib).filter(e=>e.status==='watched');
+  const f = filters.watched;
+  if(f==='movie') items=items.filter(e=>!e.tv);
+  if(f==='tv')    items=items.filter(e=>!!e.tv);
+  document.getElementById('watchedCnt').textContent = items.length+' yapım';
+  const el = document.getElementById('watchedList');
+  if(!items.length){ el.innerHTML='<div class="empty"><div class="eico">🎬</div><div class="etxt">Henüz birlikte izlenen yok</div></div>'; return; }
+  el.innerHTML = items.map(e=>{
+    const poster = e.poster?`<img class="limg" src="${IMG}${e.poster}" loading="lazy" alt=""/>` : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const ratings = Object.entries(e.ratings||{}).map(([n,r])=>
+      `<div class="lrating-item">${avHtml(n,n===user.name?user.color:'blue',19)}<span style="font-size:12px;color:var(--t2)">${n}:</span><span style="color:var(--gold);font-size:13px">★</span><span style="font-size:12.5px;font-weight:700;color:var(--gold)">${r}/10</span></div>`
+    ).join('');
+    const notes = Object.entries(e.notes||{}).filter(([,n])=>n).map(([n,nt])=>
+      `<div class="lnote"><span style="font-size:11px;color:var(--t3)">${n}: </span>${nt}</div>`
+    ).join('');
+    const rawItem = e.raw ? JSON.parse(e.raw) : e;
+    const ck = cacheItem(rawItem);
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${e.title}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span>${e.year}</span>`:''}</div>
+        ${ratings?`<div class="lratings">${ratings}</div>`:''}
+        ${notes}
+        <div class="lactions">
+          <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Düzenle</button>
+          <button class="btn bred bxs" onclick="removeShared('${e.id}')">Kaldır</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderWatchlist(){
+  let items = Object.values(sharedLib).filter(e=>e.status==='watchlist');
+  const f = filters.watchlist;
+  if(f==='movie') items=items.filter(e=>!e.tv);
+  if(f==='tv')    items=items.filter(e=>!!e.tv);
+  document.getElementById('watchlistCnt').textContent = items.length+' yapım';
+  const el = document.getElementById('watchlistList');
+  if(!items.length){ el.innerHTML='<div class="empty"><div class="eico">📋</div><div class="etxt">Liste boş</div><div class="esub">Aramadan ekleyin</div></div>'; return; }
+  el.innerHTML = items.map(e=>{
+    const poster = e.poster?`<img class="limg" src="${IMG}${e.poster}" loading="lazy" alt=""/>` : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const rawItem = e.raw ? JSON.parse(e.raw) : e;
+    const ij = encItem(rawItem);
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${e.title}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span>${e.year}</span>`:''}</div>
+        <div class="ladded">${avHtml(e.addedBy||'?',e.addedBy===user.name?user.color:'blue',18)}<span>${e.addedBy||'?'} ekledi</span></div>
+        <div class="lactions">
+          <button class="btn bgreen bxs" onclick="markWatched('${e.id}')">✓ İzledik!</button>
+          <button class="btn bghost bxs" onclick="openModal('${ij}')">Düzenle</button>
+          <button class="btn bred bxs" onclick="removeShared('${e.id}')">Kaldır</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSuggestions(){
+  const el = document.getElementById('suggestList');
+  if(!suggestions.length){ el.innerHTML='<div class="empty"><div class="eico">💡</div><div class="etxt">Henüz öneri yok</div><div class="esub">Aramadan "Öneri Olarak At" ile gönder</div></div>'; return; }
+  el.innerHTML = suggestions.map(sug=>{
+    const poster = sug.poster?`<img class="limg" src="${IMG}${sug.poster}" loading="lazy" alt=""/>` : `<div class="lph">${sug.tv?'📺':'🎬'}</div>`;
+    const isMe = sug.suggestedBy===user.name;
+    const sugColor = sug.suggestedBy===user.name?user.color:'blue';
+    const actions = isMe
+      ? `<span style="font-size:12px;color:var(--t3);font-style:italic">Onay bekleniyor…</span><button class="btn bred bxs" onclick="dismissSug('${sug.id||sug.ts}')">Kaldır</button>`
+      : `<button class="btn bgreen bxs" onclick="approveSug('${sug.id||sug.ts}')">✓ Kabul Et</button><button class="btn bred bxs" onclick="dismissSug('${sug.id||sug.ts}')">✕ Reddet</button>`;
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${sug.title}</div>
+        <div class="lmeta"><span class="chip ${sug.tv?'ctv':'cmovie'}">${sug.tv?'Dizi':'Film'}</span>${sug.year?`<span>${sug.year}</span>`:''}</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--t3);margin-top:2px">${avHtml(sug.suggestedBy||'?',sugColor,18)}<span><strong style="color:var(--t2)">${sug.suggestedBy||'?'}</strong> önerdi</span></div>
+        ${sug.note?`<div class="lnote">"${sug.note}"</div>`:''}
+        <div class="lactions">${actions}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPersonal(){
+  const items = Object.values(personalLib);
+  const el = document.getElementById('personalList');
+  if(!items.length){ el.innerHTML='<div class="empty"><div class="eico">👤</div><div class="etxt">Kişisel listeniz boş</div><div class="esub">Aramadan "Sadece Benim" ile ekle</div></div>'; return; }
+  el.innerHTML = items.map(e=>{
+    const poster = e.poster?`<img class="limg" src="${IMG}${e.poster}" loading="lazy" alt=""/>` : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const rawItem = e.raw ? JSON.parse(e.raw) : e;
+    const ij = encItem(rawItem);
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${e.title}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span>${e.year}</span>`:''}</div>
+        ${e.note?`<div class="lnote">"${e.note}"</div>`:''}
+        <div class="lactions">
+          <button class="btn bgold bxs" onclick="suggestFromPersonal('${ij}')">💡 Öner</button>
+          <button class="btn bred bxs" onclick="removePersonal('${e.id}')">Kaldır</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ACTIONS ─────────────────────────────────────────────────────
+async function markWatched(id){
+  if(!sharedLib[id]) return;
+  const updated = {...sharedLib[id], status:'watched'};
+  if(!updated.ratings) updated.ratings={};
+  if(!updated.notes) updated.notes={};
+  await db.ref('sharedLib/'+id).set(updated);
+  showToast('✓ İzledik olarak işaretlendi!');
+}
+
+async function removeShared(id){
+  await db.ref('sharedLib/'+id).remove();
+  showToast('Listeden kaldırıldı');
+}
+
+function removePersonal(id){
+  delete personalLib[id];
+  savePersonal(); updateCounts(); renderPersonal();
+  showToast('Kişisel listeden kaldırıldı');
+}
+
+async function approveSug(key){
+  // find in suggestions by id or ts
+  const sug = suggestions.find(s=>(s.id||s.ts)==key||(s.id||s.ts)==Number(key));
+  if(!sug) return;
+  const updated = { id:sug.itemId, title:sug.title, year:sug.year, poster:sug.poster, tv:!!sug.tv, raw:sug.raw||'{}',
+    status:'watchlist', addedBy:sug.suggestedBy, ratings:{}, notes:sug.note?{[sug.suggestedBy]:sug.note}:{} };
+  await db.ref('sharedLib/'+sug.itemId).set(updated);
+  // remove suggestion
+  const snap = await db.ref('suggestions').once('value');
+  const all = snap.val()||{};
+  const fbKey = Object.keys(all).find(k=>all[k].ts==key||all[k].id==key||all[k].ts==Number(key));
+  if(fbKey) await db.ref('suggestions/'+fbKey).remove();
+  showToast('✅ Öneri kabul edildi! Birlikte izleneceklere eklendi.');
+}
+
+async function dismissSug(key){
+  const snap = await db.ref('suggestions').once('value');
+  const all = snap.val()||{};
+  const fbKey = Object.keys(all).find(k=>all[k].ts==key||all[k].id==key||all[k].ts==Number(key));
+  if(fbKey) await db.ref('suggestions/'+fbKey).remove();
+  showToast('Öneri kaldırıldı');
+}
+
+async function suggestFromPersonal(raw){
+  const item = typeof raw==='string'?JSON.parse(raw):raw;
+  const id   = String(item.id||item.itemId||'');
+  const e    = personalLib[id]||item;
+  const key  = 'sug_'+Date.now();
+  await db.ref('suggestions/'+key).set({
+    id:key, itemId:id, title:e.title, year:e.year, poster:e.poster, tv:!!e.tv,
+    raw:e.raw||JSON.stringify(item), suggestedBy:user.name, note:e.note||'', ts:Date.now()
+  });
+  showToast('💡 Öneri kutusu atıldı!');
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='flex';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.style.display='none', 3000);
+}
+
+// Enter key on setup
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && document.getElementById('pinScreen').style.display!=='none') checkPin();
+});
+</script>
+</body>
+</html>
