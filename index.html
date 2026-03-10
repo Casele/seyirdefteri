@@ -413,7 +413,9 @@ a{color:var(--gold)}
 <script>
 const TMDB = 'https://api.themoviedb.org/3';
 const TMDB_KEY = '51e0d6b5776bdcb134ad7269ffcb0734';
-const ACCESS_PIN = '260222'; // ← Şifreyi buradan değiştirebilirsin
+// Şifreyi değiştirmek için: şifreni SHA-256 ile hash'le ve aşağıya yapıştır
+// Hash üretmek için: https://emn178.github.io/online-tools/sha256.html
+const ACCESS_PIN_HASH = '0e04b227fdcc4dbc8206540d09ba6819c11e466c8dafc0f8a8719d318ae64ba9';
 const IMG  = 'https://image.tmdb.org/t/p/w500';
 const COLORS = [
   {id:'rose', bg:'#e87884'},{id:'gold',bg:'#e8b84b'},
@@ -466,9 +468,12 @@ window.onload = () => {
   else   { document.getElementById('setupScreen').style.display = 'flex'; }
 };
 
-function checkPin(){
+async function checkPin(){
   const val = document.getElementById('pinInput').value.trim();
-  if(val === ACCESS_PIN){
+  if(!val) return;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash === ACCESS_PIN_HASH){
     lsSet('cm_pin_ok', true);
     document.getElementById('pinScreen').style.display='none';
     const u = lsGet('cm_user');
@@ -654,7 +659,15 @@ function refreshSearchBadges(){
   if(q.length>1) doSearch(q);
 }
 
-function encItem(item){ return JSON.stringify(item).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+// Item cache - onclick'te JSON yerine index kullan
+const _itemCache = {};
+let _itemIdx = 0;
+function cacheItem(item){
+  const key = 'i'+(++_itemIdx);
+  _itemCache[key] = item;
+  return key;
+}
+function getCached(key){ return _itemCache[key]; }
 
 function renderSearchGrid(items){
   const grid = document.getElementById('searchGrid');
@@ -667,13 +680,13 @@ function renderSearchGrid(items){
     const badge = se?`<div class="card-badge" style="background:${se.status==='watched'?'var(--grbg)':'var(--blbg)'};color:${se.status==='watched'?'var(--green)':'var(--blue)'};border:1px solid ${se.status==='watched'?'var(--grbd)':'var(--blbd)'}">${se.status==='watched'?'✓':'🎬'}</div>`:'';
     const btnCls = se?(se.status==='watched'?'bgreen':'bblue'):'bghost';
     const btnTxt = se?(se.status==='watched'?'✓ İzledik':'🎬 Listede'):'+ Ekle';
-    const ij = encItem(item);
-    return `<div class="card" onclick="openModal('${ij}')">
+    const ck = cacheItem(item);
+    return `<div class="card" onclick="openModal(getCached('${ck}'))">
       ${poster}${badge}
       <div class="cbody">
         <div class="ctitle">${item.title||item.name||'—'}</div>
         <div class="cmeta"><span class="chip ${tv?'ctv':'cmovie'}">${tv?'Dizi':'Film'}</span>${yr?`<span>${yr}</span>`:''}${item.vote_average>0?`<span>⭐${item.vote_average.toFixed(1)}</span>`:''}</div>
-        <button class="btn bxs ${btnCls}" onclick="event.stopPropagation();openModal('${ij}')">${btnTxt}</button>
+        <button class="btn bxs ${btnCls}" onclick="event.stopPropagation();openModal(getCached('${ck}'))">${btnTxt}</button>
       </div>
     </div>`;
   }).join('');
@@ -681,7 +694,8 @@ function renderSearchGrid(items){
 
 // ── MODAL ──────────────────────────────────────────────────────
 function openModal(raw){
-  currentItem = typeof raw==='string' ? JSON.parse(raw) : raw;
+  currentItem = (typeof raw==='string') ? JSON.parse(raw) : raw;
+  if(!currentItem){ console.error('openModal: item yok'); return; }
   const tv = currentItem.media_type==='tv'||(!!currentItem.first_air_date&&!currentItem.release_date);
   const id = String(currentItem.id||currentItem.itemId||'');
   const se = sharedLib[id];
@@ -799,7 +813,7 @@ function renderWatched(){
       `<div class="lnote"><span style="font-size:11px;color:var(--t3)">${n}: </span>${nt}</div>`
     ).join('');
     const rawItem = e.raw ? JSON.parse(e.raw) : e;
-    const ij = encItem(rawItem);
+    const ck = cacheItem(rawItem);
     return `<div class="lrow">
       ${poster}
       <div class="lbody">
@@ -808,7 +822,7 @@ function renderWatched(){
         ${ratings?`<div class="lratings">${ratings}</div>`:''}
         ${notes}
         <div class="lactions">
-          <button class="btn bghost bxs" onclick="openModal('${ij}')">Düzenle</button>
+          <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Düzenle</button>
           <button class="btn bred bxs" onclick="removeShared('${e.id}')">Kaldır</button>
         </div>
       </div>
