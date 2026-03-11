@@ -187,8 +187,8 @@ img{display:block}
 .modal-info{flex:1;min-width:0}
 .modal-title{font-family:'Playfair Display',serif;font-size:17px;line-height:1.3;margin-bottom:5px}
 .modal-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.dest-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-.dest-btn{padding:10px 8px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:12px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.3}
+.dest-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.dest-btn{padding:8px 6px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:11px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.3}
 .dest-btn:hover{border-color:var(--gold);color:var(--t1)}
 .dest-btn.on{border-color:var(--gold);background:var(--goldbg);color:var(--gold)}
 .dest-btn small{font-weight:400;color:var(--t3);font-size:10.5px}
@@ -473,7 +473,7 @@ img{display:block}
       <button class="dest-btn" id="dest-mylog"            onclick="setDest('mylog')">📓 Ben İzledim<small>Kişisel kayıt</small></button>
       <button class="dest-btn" id="dest-ongoing"          onclick="setDest('ongoing')">▶ Devam Ediyoruz<small>İzlemeye devam</small></button>
       <button class="dest-btn" id="dest-suggest"          onclick="setDest('suggest')">💡 Öneri Olarak At<small>Onay beklesin</small></button>
-      <button class="dest-btn" id="dest-personal"         onclick="setDest('personal')" style="grid-column:span 2">👤 Listemde Olsun<small>İzlemek istiyorum</small></button>
+      <button class="dest-btn" id="dest-personal"         onclick="setDest('personal')">👤 Listemde Olsun<small>İzlemek istiyorum</small></button>
     </div>
 
     <div id="ratingSection" style="display:none">
@@ -822,14 +822,19 @@ function renderSearchGrid(items){
     const titleNorm = (item.title||item.name||'').toLowerCase();
     const pKey = posterCacheKey(item.title||item.name, yr);
 
-    // Benim logumda mı? (id veya tmdbId veya başlık+yıl ile eşleş)
+    // Benim logumda mı? (id, tmdbId, başlık+yıl, ya da sadece başlık ile)
+    const normT = t => (t||'').toLowerCase().replace(/[^a-z0-9]/g,'');
     const myWatched = myLog[id] ||
       Object.values(myLog).find(e=> String(e.tmdbId)===id) ||
-      Object.values(myLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr);
+      Object.values(myLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.title)===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.title)===normT(item.title||item.name));
     // Partner'ın logunda mı?
     const pWatched  = partnerLog[id] ||
       Object.values(partnerLog).find(e=> String(e.tmdbId)===id) ||
-      Object.values(partnerLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr);
+      Object.values(partnerLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.title)===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.title)===normT(item.title||item.name));
     // Benim listemde mi?
     const myPersonal = personalLib[id] || Object.values(personalLib).find(e=>
       e.title?.toLowerCase()===titleNorm && e.year===yr);
@@ -1286,7 +1291,7 @@ function setDest(d){
   updateDestUI();
 }
 function updateDestUI(){
-  ['shared-watched','shared-watchlist','mylog','suggest','personal'].forEach(d=>{
+  ['shared-watched','shared-watchlist','mylog','ongoing','suggest','personal'].forEach(d=>{
     document.getElementById('dest-'+d)?.classList.toggle('on', d===currentDest);
   });
   document.getElementById('ratingSection').style.display =
