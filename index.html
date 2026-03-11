@@ -2040,7 +2040,7 @@ function showToast(msg, undoFn){
   const t = document.getElementById('toast');
   clearTimeout(_toastTimer);
   if(undoFn){
-    t.innerHTML = msg + ' <button onclick="(window.__undoFn||function(){})();this.closest('div').remove&&0" style="margin-left:8px;background:var(--gold);color:#000;border:none;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle">↩ Geri Al</button>';
+    t.innerHTML = msg + '<button onclick="if(window.__undoFn)window.__undoFn()" style="margin-left:10px;background:var(--gold);color:#000;border:none;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle">↩ Geri Al</button>';
     t.style.pointerEvents = 'auto';
     t.classList.add('undo');
     window.__undoFn = ()=>{ undoFn(); t.classList.remove('show','undo'); t.style.pointerEvents='none'; window.__undoFn=null; };
