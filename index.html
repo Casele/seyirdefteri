@@ -1,0 +1,1894 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Seyir Defteri 🎬</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey:            "__FB_API_KEY__",
+  authDomain:        "__FB_AUTH_DOMAIN__",
+  databaseURL:       "__FB_DB_URL__",
+  projectId:         "__FB_PROJECT_ID__",
+  storageBucket:     "__FB_STORAGE_BUCKET__",
+  messagingSenderId: "__FB_MSG_ID__",
+  appId:             "__FB_APP_ID__"
+};
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+/* ── RESET & TOKENS ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;--surface:#16161a;--s2:#1e1e24;--s3:#2a2a32;
+  --t1:#f0ede8;--t2:#b8b4ae;--t3:#6e6a65;
+  --gold:#e8b84b;--goldbg:rgba(232,184,75,.12);--goldbr:rgba(232,184,75,.3);
+  --rose:#e87884;--rosebg:rgba(232,120,132,.12);--rosebd:rgba(232,120,132,.3);
+  --green:#5ec87a;--grbg:rgba(94,200,122,.12);--grbd:rgba(94,200,122,.3);
+  --blue:#7eb8d4;--blbg:rgba(126,184,212,.12);--blbd:rgba(126,184,212,.3);
+  --lila:#b48be8;--libg:rgba(180,139,232,.12);--libd:rgba(180,139,232,.3);
+  --r:12px;--sh:0 2px 12px rgba(0,0,0,.4);
+  --fox:#7eb8d4;--bun:#b48be8;
+}
+html,body{background:var(--bg);color:var(--t1);font-family:'Nunito',sans-serif;min-height:100vh}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+input{font-family:inherit;outline:none}
+img{display:block}
+
+/* ── TYPOGRAPHY ─────────────────────────────────────────────── */
+.serif{font-family:'Playfair Display',serif}
+
+/* ── UTILITY BUTTONS ────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-size:13px;font-weight:600;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.97)}
+.bxs{padding:5px 10px;font-size:12px;border-radius:6px}
+.bprimary{background:var(--gold);color:#1a1400}
+.bghost{background:var(--s3);color:var(--t2)}
+.bghost:hover{background:var(--s2);color:var(--t1)}
+.bgreen{background:var(--grbg);color:var(--green);border:1px solid var(--grbd)}
+.bblue{background:var(--blbg);color:var(--blue);border:1px solid var(--blbd)}
+.bred{background:var(--rosebg);color:var(--rose);border:1px solid var(--rosebd)}
+.bgold{background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbr)}
+.bpurple{background:var(--libg);color:var(--lila);border:1px solid var(--libd)}
+
+/* ── PILLS ──────────────────────────────────────────────────── */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--s3);color:var(--t3);background:transparent;transition:all .2s}
+.pill:hover{border-color:var(--gold);color:var(--gold)}
+.pill.on{background:var(--gold);color:#1a1400;border-color:var(--gold)}
+
+/* ── CHIPS ──────────────────────────────────────────────────── */
+.chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.cmovie{background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbr)}
+.ctv{background:var(--blbg);color:var(--blue);border:1px solid var(--blbd)}
+
+/* ── INPUT ──────────────────────────────────────────────────── */
+.inp{background:var(--s2);border:1px solid var(--s3);color:var(--t1);border-radius:var(--r);padding:10px 14px;font-size:14px;width:100%;transition:border-color .2s}
+.inp:focus{border-color:var(--gold)}
+.inp::placeholder{color:var(--t3)}
+
+/* ── AVATAR ─────────────────────────────────────────────────── */
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;flex-shrink:0;font-size:13px}
+
+/* ── PIN SCREEN ─────────────────────────────────────────────── */
+#pinScreen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.pin-card{background:var(--surface);border-radius:20px;padding:36px 32px;max-width:340px;width:100%;text-align:center;box-shadow:var(--sh)}
+.pin-icon{width:54px;height:54px;border-radius:15px;background:var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.pin-title{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:6px}
+.pin-sub{color:var(--t3);font-size:13px;margin-bottom:22px}
+.pin-err{color:var(--rose);font-size:13px;margin-top:8px;display:none}
+
+/* ── SETUP SCREEN ───────────────────────────────────────────── */
+#setupScreen{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;background:var(--bg)}
+.setup-card{background:var(--surface);border-radius:20px;padding:36px;max-width:400px;width:100%;box-shadow:var(--sh);text-align:center}
+.setup-title{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:8px}
+.setup-sub{color:var(--t3);font-size:13px;margin-bottom:24px}
+.user-opts{display:flex;gap:14px;justify-content:center;margin-top:8px}
+.user-opt{flex:1;padding:18px 12px;border-radius:14px;border:2px solid var(--s3);background:var(--s2);cursor:pointer;transition:all .2s;text-align:center}
+.user-opt:hover{border-color:var(--gold);background:var(--goldbg);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.user-opt.sel{border-color:var(--gold);background:var(--goldbg)}
+.user-opt-icon{font-size:32px;margin-bottom:6px}
+.user-opt-name{font-weight:700;font-size:15px}
+.user-opt-color{font-size:11px;color:var(--t3);margin-top:2px}
+
+/* ── MAIN APP ───────────────────────────────────────────────── */
+#mainApp{display:none}
+.hdr{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--s3);position:sticky;top:0;z-index:100;background:rgba(13,13,15,.97);backdrop-filter:blur(12px);transition:padding .25s,background .25s,box-shadow .25s}
+.hdr.scrolled{padding:9px 20px;background:rgba(13,13,15,.85);box-shadow:0 2px 20px rgba(0,0,0,.5)}
+.hdr-logo{display:flex;align-items:center;gap:10px}
+.hdr-lmark{width:36px;height:36px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hdr-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--t1);line-height:1}
+.hdr-sub{font-size:10px;color:var(--t3);letter-spacing:.8px;text-transform:uppercase}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.hdr-stats{font-size:12px;color:var(--t2);font-weight:600}
+.hdr-sync{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--rose);transition:background .4s}
+.hdr-users{display:flex;gap:4px;align-items:center}
+.hdr-user{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;transition:opacity .2s}
+.hdr-user.active{opacity:1}
+.hdr-user.inactive{opacity:.4}
+.hdr-switch{padding:5px 12px;border-radius:8px;background:var(--s3);color:var(--t2);font-size:12px;font-weight:600}
+.hdr-switch:hover{background:var(--s2);color:var(--t1)}
+
+/* ── TABS ───────────────────────────────────────────────────── */
+.tabs{display:flex;gap:4px;padding:12px 20px;overflow-x:auto;border-bottom:1px solid var(--s3);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--t3);background:transparent;border:none;white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.tab:hover{color:var(--t1)}
+.tab.on{background:var(--surface);color:var(--t1);box-shadow:var(--sh)}
+.bcount{background:var(--s3);color:var(--t2);border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700}
+.tab.on .bcount{background:var(--gold);color:#1a1400}
+
+/* ── PANE ───────────────────────────────────────────────────── */
+.wrap{padding:20px 20px 80px}
+.sechdr{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.sectitle{font-family:'Playfair Display',serif;font-size:20px;font-weight:700}
+.seccnt{font-size:12px;color:var(--t3)}
+.filter-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+/* ── TAB SEARCH BAR ─────────────────────────────────────────── */
+.tab-search-bar{position:relative;margin-bottom:14px}
+.tab-search-bar .sinp-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;display:flex}
+.tab-sinp{width:100%;background:var(--s2);border:1px solid var(--s3);color:var(--t1);border-radius:10px;padding:9px 14px 9px 36px;font-size:13px;font-family:inherit;transition:border-color .2s}
+.tab-sinp:focus{outline:none;border-color:var(--gold)}
+.tab-sinp::placeholder{color:var(--t3)}
+
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.empty{text-align:center;padding:48px 20px;color:var(--t3)}
+.eico{font-size:40px;margin-bottom:10px}
+.etxt{font-size:16px;font-weight:600;color:var(--t2);margin-bottom:4px}
+.esub{font-size:13px}
+
+/* ── SEARCH ─────────────────────────────────────────────────── */
+.sinp-wrap{position:relative;flex:1;min-width:200px}
+.sinp-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
+.sinp{background:var(--s2);border:1px solid var(--s3);color:var(--t1);border-radius:var(--r);padding:10px 14px 10px 38px;font-size:14px;width:100%;transition:border-color .2s}
+.sinp:focus{border-color:var(--gold)}
+.sinp::placeholder{color:var(--t3)}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px;margin-top:18px}
+
+/* ── CARD (search) ──────────────────────────────────────────── */
+.card{background:var(--surface);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);transition:transform .2s,box-shadow .2s;position:relative;cursor:pointer}
+.card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.cimg{width:100%;aspect-ratio:2/3;object-fit:cover}
+.cph{width:100%;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;background:var(--s3);font-size:32px}
+.cbody{padding:8px 10px 10px}
+.ctitle{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cmeta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
+/* Badge göstergesi (sol üst köşe) */
+.cbadge{position:absolute;top:6px;right:6px;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:700;backdrop-filter:blur(4px)}
+/* Kullanıcı ikonları (sol üst) */
+.card-uicons{position:absolute;top:5px;left:5px;display:flex;gap:2px;flex-wrap:wrap;max-width:60px}
+.uicon{font-size:12px;background:rgba(0,0,0,.65);border-radius:6px;padding:2px 4px;display:inline-flex;align-items:center;gap:2px;backdrop-filter:blur(3px)}
+
+/* ── LIST ROW ───────────────────────────────────────────────── */
+.lrow{display:flex;gap:12px;padding:12px;background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:10px}
+.limg{width:60px;height:90px;object-fit:cover;border-radius:8px;flex-shrink:0}
+.lph{width:60px;height:90px;border-radius:8px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.lbody{flex:1;min-width:0}
+.ltitle{font-size:14px;font-weight:700;line-height:1.3;margin-bottom:5px}
+.lmeta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.lactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.lratings{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.lnote{font-size:12px;color:var(--t3);font-style:italic;margin-top:4px}
+.lrating-item{font-size:12px;display:flex;align-items:center;gap:4px;color:var(--t2)}
+/* Row sağ üst ikonlar */
+.lrow-right{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+
+/* ── MODAL ──────────────────────────────────────────────────── */
+#modal{display:none;position:fixed;inset:0;z-index:5000;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.7);padding:20px}
+#modal.open{display:flex}
+.modal-box{background:var(--surface);border-radius:20px 20px 16px 16px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 -4px 30px rgba(0,0,0,.5)}
+.modal-hdr{display:flex;gap:14px;margin-bottom:18px}
+.modal-poster{width:70px;height:105px;object-fit:cover;border-radius:10px;flex-shrink:0}
+.modal-poster-ph{width:70px;height:105px;border-radius:10px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.modal-info{flex:1;min-width:0}
+.modal-title{font-family:'Playfair Display',serif;font-size:17px;line-height:1.3;margin-bottom:5px}
+.modal-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.dest-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.dest-btn{padding:8px 6px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:11px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.3}
+.dest-btn:hover{border-color:var(--gold);color:var(--t1)}
+.dest-btn.on{border-color:var(--gold);background:var(--goldbg);color:var(--gold)}
+.dest-btn small{font-weight:400;color:var(--t3);font-size:10.5px}
+.dest-btn.on small{color:var(--gold);opacity:.7}
+.modal-sect{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:8px}
+#starsRow{display:flex;gap:4px;margin-bottom:4px}
+#ratingVal{font-size:13px;color:var(--t3);margin-bottom:12px}
+#noteInput{resize:none;height:64px}
+
+/* ── SUGGESTIONS ────────────────────────────────────────────── */
+.sug-row{display:flex;gap:12px;padding:12px;background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:10px}
+
+/* ── TOAST ──────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--s2);color:var(--t1);padding:10px 16px;border-radius:24px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.5);z-index:9999;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;border:1px solid var(--s3);display:flex;align-items:center;gap:10px;max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:all !important}
+.toast.show *{pointer-events:all !important}
+#toastUndo{cursor:pointer !important;position:relative;z-index:10000}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media(max-width:600px){
+  .hdr{padding:10px 14px}
+  .wrap{padding:14px 14px 70px}
+  .tabs{padding:10px 14px}
+  .sgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+  .dest-grid{grid-template-columns:1fr}
+  .tab{padding:6px 11px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── PIN SCREEN ──────────────────────────────────────────── -->
+<div id="pinScreen">
+  <div class="pin-card">
+    <div class="pin-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1a1400" stroke-width="2.3" stroke-linecap="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+    </div>
+    <div class="pin-title serif">Seyir Defteri</div>
+    <div class="pin-sub">Özel erişim kodu girin 🔒</div>
+    <input class="inp" type="password" id="pinInput" placeholder="••••••" maxlength="20"
+      style="text-align:center;font-size:20px;letter-spacing:8px"
+      onkeydown="if(event.key==='Enter')checkPin()"/>
+    <div id="pinErr" class="pin-err">❌ Hatalı kod</div>
+    <button class="btn bprimary" style="width:100%;justify-content:center;margin-top:14px;padding:12px;font-size:15px" onclick="checkPin()">Giriş →</button>
+  </div>
+</div>
+
+<!-- ── SETUP SCREEN ─────────────────────────────────────────── -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <div style="font-size:48px;margin-bottom:12px">🎬</div>
+    <div class="setup-title serif" style="font-size:26px">Seyir Defteri</div>
+    <div class="setup-sub" style="margin-bottom:32px;font-size:14px">Kim izliyor?</div>
+    <div class="user-opts">
+      <div class="user-opt" onclick="selectUser('Fox')" style="padding:28px 20px">
+        <div class="user-opt-icon" style="font-size:44px">🦊</div>
+        <div class="user-opt-name" style="font-size:17px;margin-top:10px">Fox</div>
+        <div style="width:28px;height:4px;border-radius:2px;background:var(--fox);margin:8px auto 0"></div>
+      </div>
+      <div class="user-opt" onclick="selectUser('Bun')" style="padding:28px 20px">
+        <div class="user-opt-icon" style="font-size:44px">🐰</div>
+        <div class="user-opt-name" style="font-size:17px;margin-top:10px">Bun</div>
+        <div style="width:28px;height:4px;border-radius:2px;background:var(--bun);margin:8px auto 0"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ─────────────────────────────────────────────── -->
+<div id="mainApp">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-logo">
+      <div class="hdr-lmark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1400" stroke-width="2.3" stroke-linecap="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="hdr-title">Seyir Defteri</div>
+        <div class="hdr-sub">Film &amp; Dizi Takipçisi</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div>
+        <div class="hdr-sync"><span class="sync-dot" id="syncDot"></span><span id="syncLbl">Bağlanıyor</span></div>
+        <div class="hdr-stats" id="hdrStats"></div>
+      </div>
+      <div class="hdr-users">
+        <div class="hdr-user" id="hdrFox" style="background:rgba(126,184,212,.15);color:var(--fox)">
+          <span>🦊</span><span>Fox</span>
+        </div>
+        <div class="hdr-user" id="hdrBun" style="background:rgba(180,139,232,.15);color:var(--bun)">
+          <span>🐰</span><span>Bun</span>
+        </div>
+      </div>
+      <button class="hdr-notif" id="notifBtn" onclick="toggleNotifMenu()" title="Bildirimler & Ayarlar" style="padding:7px;border-radius:8px;background:var(--s3);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--s3)'">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+</button>
+<div id="notifMenu" style="display:none;position:absolute;top:56px;right:16px;z-index:3000;background:var(--surface);border:1px solid var(--s3);border-radius:14px;padding:14px;min-width:220px;box-shadow:0 8px 30px rgba(0,0,0,.5)">
+  <div style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Bildirimler</div>
+  <button class="btn bgold" style="width:100%;justify-content:center;margin-bottom:8px" onclick="enableNotifications();document.getElementById('notifMenu').style.display='none'">
+    🔔 Yeni Sezon Bildirimleri
+  </button>
+  <div style="font-size:11px;color:var(--t3);line-height:1.5">▶ Devam Ediyoruz listenizdeki dizilerde yeni sezon çıkınca bildirim alırsınız. 12 saatte bir kontrol edilir.</div>
+</div>
+<button class="hdr-switch" onclick="switchUser()">Değiştir</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab on" id="tab-search"    onclick="showTab('search',this)">🔍 Ara</button>
+    <button class="tab"    id="tab-watched"   onclick="showTab('watched',this)">✓ İzledik <span class="bcount" id="cnt-watched">0</span></button>
+    <button class="tab"    id="tab-watchlist" onclick="showTab('watchlist',this)">🎬 İzleyeceğiz <span class="bcount" id="cnt-watchlist">0</span></button>
+    <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
+    <button class="tab"    id="tab-suggest"   onclick="showTab('suggest',this)">💡 Öneriler <span class="bcount" id="cnt-suggest">0</span></button>
+    <button class="tab"    id="tab-mylog"     onclick="showTab('mylog',this)">📓 İzledim <span class="bcount" id="cnt-mylog">0</span></button>
+    <button class="tab"    id="tab-personal"  onclick="showTab('personal',this)">👤 Listem <span class="bcount" id="cnt-personal">0</span></button>
+  </div>
+
+  <!-- ── PANE: SEARCH ──────────────────────────────────────── -->
+  <div id="pane-search" class="wrap">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
+      <div class="sinp-wrap">
+        <span class="sinp-ico">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input class="sinp" id="searchInput" placeholder="Film veya dizi ara…" autocomplete="off" oninput="onSearchInput(this.value)"/>
+      </div>
+      <div class="filter-row">
+        <button class="pill on" id="stype-all"   onclick="setSType('all',this)">Hepsi</button>
+        <button class="pill"    id="stype-movie" onclick="setSType('movie',this)">🎬 Film</button>
+        <button class="pill"    id="stype-tv"    onclick="setSType('tv',this)">📺 Dizi</button>
+      </div>
+    </div>
+    <div id="searchGrid" class="sgrid"></div>
+  </div>
+
+  <!-- ── PANE: İZLEDİK ─────────────────────────────────────── -->
+  <div id="pane-watched" style="display:none" class="wrap">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle serif">İkimiz İzledik ✓</div>
+        <div class="seccnt" id="watchedCnt">0 yapım</div>
+      </div>
+      <div class="filter-row">
+        <button class="pill on" onclick="setFilter('watched','all',this)">Hepsi</button>
+        <button class="pill"    onclick="setFilter('watched','movie',this)">Film</button>
+        <button class="pill"    onclick="setFilter('watched','tv',this)">Dizi</button>
+      </div>
+    </div>
+    <div class="tab-search-bar">
+      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input class="tab-sinp" autocomplete="off" placeholder="Listede ara…" oninput="filterTabList('watched',this.value)"/>
+    </div>
+    <div id="watchedList"></div>
+  </div>
+
+  <!-- ── PANE: İZLEYECEĞİZ ─────────────────────────────────── -->
+  <div id="pane-watchlist" style="display:none" class="wrap">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle serif">Birlikte İzleyeceğiz 🎬</div>
+        <div class="seccnt" id="watchlistCnt">0 yapım</div>
+      </div>
+      <div class="filter-row">
+        <button class="pill on" onclick="setFilter('watchlist','all',this)">Hepsi</button>
+        <button class="pill"    onclick="setFilter('watchlist','movie',this)">Film</button>
+        <button class="pill"    onclick="setFilter('watchlist','tv',this)">Dizi</button>
+      </div>
+    </div>
+    <div class="tab-search-bar">
+      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input class="tab-sinp" autocomplete="off" placeholder="Listede ara…" oninput="filterTabList('watchlist',this.value)"/>
+    </div>
+    <div id="watchlistList"></div>
+  </div>
+
+  <!-- ── PANE: ÖNERİLER ────────────────────────────────────── -->
+  <div id="pane-suggest" style="display:none" class="wrap">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle serif">Öneri Kutusu 💡</div>
+        <div class="seccnt">Birbirinize film/dizi önerin</div>
+      </div>
+    </div>
+    <div class="tab-search-bar">
+      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input class="tab-sinp" autocomplete="off" placeholder="Önerilerde ara…" oninput="filterSuggestions(this.value)"/>
+    </div>
+    <div id="suggestList"></div>
+  </div>
+
+  <!-- ── PANE: İZLEDİM ─────────────────────────────────────── -->
+  <div id="pane-mylog" style="display:none" class="wrap">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle serif" id="mylogTitle">Benim İzlediklerim 📓</div>
+        <div class="seccnt" id="mylogSub">Kişisel izleme günlüğün</div>
+      </div>
+      <div class="filter-row">
+        <button class="pill on" id="mlv-me"      onclick="setMyLogView('me',this)">🦊 Benim</button>
+        <button class="pill"    id="mlv-partner"  onclick="setMyLogView('partner',this)">🐰 Partner</button>
+        <span style="color:var(--s3);margin:0 2px">|</span>
+        <button class="pill on" id="mlf-all"   onclick="setMyLogFilter('all',this)">Hepsi</button>
+        <button class="pill"    id="mlf-movie" onclick="setMyLogFilter('movie',this)">Film</button>
+        <button class="pill"    id="mlf-tv"    onclick="setMyLogFilter('tv',this)">Dizi</button>
+        <label style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;border:1px solid var(--goldbr);color:var(--gold);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s" onmouseover="this.style.background='var(--goldbg)'" onmouseout="this.style.background='transparent'">
+          📥 Letterboxd
+          <input type="file" accept=".csv" multiple style="display:none" onchange="importLetterboxdFiles(event)"/>
+        </label>
+      </div>
+    </div>
+    <div class="tab-search-bar" style="margin-bottom:12px">
+      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input class="tab-sinp" autocomplete="off" id="mylogSearch" placeholder="İzledimde ara…" oninput="filterMyLog(this.value)"/>
+    </div>
+    <div id="mylogList"></div>
+  </div>
+
+  <!-- ── PANE: LİSTEM ──────────────────────────────────────── -->
+  <div id="pane-personal" style="display:none" class="wrap">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle serif">Listem 👤</div>
+        <div class="seccnt" id="personalSub">Kişisel liste</div>
+      </div>
+      <div class="filter-row">
+        <button class="pill on" onclick="setFilter('personal','all',this)">Hepsi</button>
+        <button class="pill"    onclick="setFilter('personal','movie',this)">Film</button>
+        <button class="pill"    onclick="setFilter('personal','tv',this)">Dizi</button>
+      </div>
+    </div>
+    <div class="tab-search-bar">
+      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input class="tab-sinp" autocomplete="off" placeholder="Listede ara…" oninput="filterTabList('personal',this.value)"/>
+    </div>
+    <div id="personalList"></div>
+  </div>
+
+  <!-- ── PANE: DEVAM EDİYORUZ ─────────────────────────── -->
+  <div id="pane-ongoing" style="display:none" class="wrap">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle serif">Devam Ediyoruz ▶</div>
+        <div class="seccnt" id="ongoingSub">Birlikte izlediğiniz diziler</div>
+      </div>
+      <div class="filter-row">
+        <button class="pill on" id="ongoing-all"  onclick="setOngoingFilter('all',this)">Hepsi</button>
+        <button class="pill"    id="ongoing-mine" onclick="setOngoingFilter('mine',this)">Benimkiler</button>
+      </div>
+    </div>
+    <div class="tab-search-bar">
+      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input class="tab-sinp" autocomplete="off" placeholder="Devam listesinde ara…" oninput="filterOngoing(this.value)"/>
+    </div>
+    <div id="ongoingList"></div>
+  </div>
+
+</div><!-- /mainApp -->
+
+<!-- ── MODAL ────────────────────────────────────────────────── -->
+<div id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div id="mPoster"></div>
+      <div class="modal-info">
+        <div class="modal-title serif" id="mTitle"></div>
+        <div class="modal-meta" id="mMeta"></div>
+        <div id="mOverview" style="font-size:12px;color:var(--t3);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden"></div>
+      </div>
+    </div>
+
+    <div class="modal-sect">Nereye ekleyelim?</div>
+    <div class="dest-grid">
+      <button class="dest-btn" id="dest-shared-watched"   onclick="setDest('shared-watched')">✓ İkimiz İzledik<small>Ortak arşiv</small></button>
+      <button class="dest-btn" id="dest-shared-watchlist" onclick="setDest('shared-watchlist')">🎬 Birlikte İzleyeceğiz<small>Ortak liste</small></button>
+      <button class="dest-btn" id="dest-mylog"            onclick="setDest('mylog')">📓 Ben İzledim<small>Kişisel kayıt</small></button>
+      <button class="dest-btn" id="dest-ongoing"          onclick="setDest('ongoing')">▶ Devam Ediyoruz<small>İzlemeye devam</small></button>
+      <button class="dest-btn" id="dest-suggest"          onclick="setDest('suggest')">💡 Öneri Olarak At<small>Onay beklesin</small></button>
+      <button class="dest-btn" id="dest-personal"         onclick="setDest('personal')">👤 Listemde Olsun<small>İzlemek istiyorum</small></button>
+    </div>
+
+    <div id="ratingSection" style="display:none">
+      <div class="modal-sect">Puanın?</div>
+      <div id="starsRow"></div>
+      <div id="ratingVal">Puan seçilmedi</div>
+    </div>
+
+    <div class="modal-sect">Not ekle (isteğe bağlı)</div>
+    <textarea class="inp" id="noteInput" placeholder="Notun…" rows="2" style="resize:none;margin-bottom:14px"></textarea>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn bghost" style="flex:1;justify-content:center" onclick="closeModal()">İptal</button>
+      <button class="btn bprimary" style="flex:2;justify-content:center" onclick="saveItem()">Kaydet →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ─────────────────────────────────────────────────── -->
+<div class="toast" id="toast">
+  <span id="toastMsg"></span>
+  <button id="toastUndo" style="display:none;flex-shrink:0;padding:4px 12px;border-radius:12px;background:var(--gold);color:#1a1400;font-size:12px;font-weight:800;border:none;cursor:pointer;font-family:inherit" onclick="doUndo()">↩ Geri Al</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// SABITLER
+// ════════════════════════════════════════════════════════════════
+const TMDB_KEY  = '__TMDB_KEY__';
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const IMG_BASE  = 'https://image.tmdb.org/t/p/w500';
+const ACCESS_PIN = '__ACCESS_PIN__';
+
+const USERS = [
+  { name: 'Fox', emoji: '🦊', color: 'var(--fox)', bgColor: 'rgba(126,184,212,.15)' },
+  { name: 'Bun', emoji: '🐰', color: 'var(--bun)', bgColor: 'rgba(180,139,232,.15)' },
+];
+
+// ════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════
+let db          = null;
+let user        = null;          // aktif kullanıcı objesi
+let sharedLib   = {};            // Firebase sharedLib
+let suggestions = [];            // Firebase suggestions
+let personalLib = {};            // localStorage kişisel liste
+let partnerLog      = {};            // Firebase partner izledim
+let partnerPersonal = {};            // Firebase partner listem
+let currentItem = null;          // modal'da açık item
+let currentDest = '';
+let currentRating = 0;
+let searchTimer = null;
+let searchType  = 'all';
+const filters   = { watched: 'all', watchlist: 'all', personal: 'all' };
+let myLogView   = 'me';
+let myLogFilter = 'all';
+
+// ════════════════════════════════════════════════════════════════
+// LOCAL STORAGE HELPERS
+// ════════════════════════════════════════════════════════════════
+function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+// Poster cache - kalıcı olarak sakla
+function getPosterCache(){ return lsGet('cm_poster_cache') || {}; }
+function setPosterCache(cache){ lsSet('cm_poster_cache', cache); }
+function cachePoster(titleKey, posterPath){
+  const c = getPosterCache();
+  c[titleKey] = posterPath;
+  setPosterCache(c);
+}
+function getCachedPoster(titleKey){
+  const c = getPosterCache();
+  return c[titleKey] || null;
+}
+function posterCacheKey(title, year){ return (title||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,30) + '_' + (year||''); }
+
+// ════════════════════════════════════════════════════════════════
+// ITEM CACHE (onclick için)
+// ════════════════════════════════════════════════════════════════
+const _ic = {}; let _ii = 0;
+function cacheItem(item){ const k='ic'+(++_ii); _ic[k]=item; return k; }
+function getCached(k){ return _ic[k]; }
+
+// ════════════════════════════════════════════════════════════════
+// KULLANICI YARDIMCILARI
+// ════════════════════════════════════════════════════════════════
+function getUser(name){ return USERS.find(u=>u.name===name) || USERS[0]; }
+function emoji(name){ return getUser(name).emoji; }
+function userColor(name){ return getUser(name).color; }
+function partner(){ return USERS.find(u => u.name !== (user?.name)); }
+
+// ════════════════════════════════════════════════════════════════
+// PIN
+// ════════════════════════════════════════════════════════════════
+function checkPin(){
+  const val = document.getElementById('pinInput').value.trim();
+  if(!val) return;
+  if(val === ACCESS_PIN){
+    sessionStorage.setItem('cm_pin_ok','1');
+    document.getElementById('pinScreen').style.display = 'none';
+    loadAfterPin();
+  } else {
+    const err = document.getElementById('pinErr');
+    err.style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    setTimeout(()=>err.style.display='none', 2000);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════
+window.onload = () => {
+  // Firebase init
+  try {
+    if(!firebase.apps?.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+  } catch(e){ console.error('Firebase:', e.message); }
+
+  if(!sessionStorage.getItem('cm_pin_ok')){
+    document.getElementById('pinScreen').style.display = 'flex';
+    return;
+  }
+  loadAfterPin();
+};
+
+function loadAfterPin(){
+  // Her zaman kullanıcı seçim ekranı göster - otomatik giriş yok
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'flex';
+}
+
+function selectUser(name){
+  user = getUser(name);
+  lsSet('cm_user', name);
+  document.getElementById('pinScreen').style.display  = 'none';
+  document.getElementById('setupScreen').style.display = 'none';
+  startApp();
+}
+
+function switchUser(){
+  // Kullanıcı adını temizle, sayfayı yenile → en temiz geçiş
+  lsSet('cm_user', null);
+  location.reload();
+}
+
+const ALL_TABS = ['search','watched','watchlist','ongoing','suggest','mylog','personal'];
+
+// ════════════════════════════════════════════════════════════════
+// START APP
+// ════════════════════════════════════════════════════════════════
+function startApp(){
+  document.getElementById('mainApp').style.display = 'block';
+  // Tab sıfırla
+  showTab('search', document.getElementById('tab-search'));
+  // İzledim buton labellarını güncelle
+  const p0 = partner();
+  const mlvMe = document.getElementById('mlv-me');
+  const mlvPt = document.getElementById('mlv-partner');
+  if(mlvMe) mlvMe.textContent = emoji(user.name)+' Benim';
+  if(mlvPt && p0) mlvPt.textContent = emoji(p0.name)+' '+p0.name;
+  
+  // Kişisel veriyi yükle
+  personalLib = lsGet('cm_personal_'+user.name) || {};
+  
+  // Header kullanıcı göstergesi
+  updateHeader();
+  updateCounts();
+
+  if(!db){
+    document.getElementById('syncLbl').textContent = 'Çevrimdışı';
+    return;
+  }
+
+  // Bağlantı durumu
+  db.ref('.info/connected').on('value', snap => {
+    const on = snap.val()===true;
+    document.getElementById('syncDot').style.background = on ? 'var(--green)' : 'var(--rose)';
+    document.getElementById('syncLbl').textContent = on ? 'Canlı sync' : 'Bağlanıyor…';
+  });
+
+  // sharedLib dinle
+  db.ref('sharedLib').on('value', snap => {
+    sharedLib = snap.val() || {};
+    updateCounts();
+    rerenderActive();
+    refreshSearchBadges();
+  });
+
+  // suggestions dinle
+  db.ref('suggestions').on('value', snap => {
+    suggestions = Object.values(snap.val() || {});
+    updateCounts();
+    if(activeTab()==='suggest') renderSuggestions();
+  });
+
+  // Partner log dinle
+  const p = partner();
+  if(p){
+    db.ref('userLogs/'+p.name).on('value', snap => {
+      partnerLog = snap.val() || {};
+      updateCounts();
+      if(activeTab()==='mylog') renderMyLog();
+      refreshSearchBadges();
+    });
+    db.ref('userPersonal/'+p.name).on('value', snap => {
+      partnerPersonal = snap.val() || {};
+      refreshSearchBadges();
+    });
+  }
+  // Kendi listemi de Firebase'e sync et
+  if(Object.keys(personalLib).length > 0){
+    db.ref('userPersonal/'+user.name).set(personalLib).catch(()=>{});
+  }
+
+  // Kendi logunu Firebase'e sync et
+  const myL = lsGet('cm_mylog_'+user.name);
+  if(myL && Object.keys(myL).length > 0){
+    db.ref('userLogs/'+user.name).set(myL).catch(()=>{});
+  }
+
+  // Poster eksikse arka planda çek
+  setTimeout(fetchMissingPosters, 3000);
+  // Yeni sezon kontrolü (45sn sonra, veri yüklendikten sonra)
+  setTimeout(checkNewSeasons, 45000);
+}
+
+function activeTab(){ return ALL_TABS.find(t=>document.getElementById('tab-'+t)?.classList.contains('on'))||'search'; }
+
+// ════════════════════════════════════════════════════════════════
+// TAB
+// ════════════════════════════════════════════════════════════════
+function showTab(name, btn){
+  ALL_TABS.forEach(t => {
+    document.getElementById('pane-'+t).style.display = t===name ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('on', t===name);
+  });
+  if(name==='watched')   renderWatched();
+  if(name==='watchlist') renderWatchlist();
+  if(name==='suggest')   renderSuggestions();
+  if(name==='mylog')     renderMyLog();
+  if(name==='personal')  renderPersonal();
+  if(name==='ongoing')   renderOngoing();
+}
+
+function rerenderActive(){
+  const t = activeTab();
+  if(t==='watched')   renderWatched();
+  if(t==='watchlist') renderWatchlist();
+  if(t==='suggest')   renderSuggestions();
+}
+
+// ════════════════════════════════════════════════════════════════
+// HEADER & COUNTS
+// ════════════════════════════════════════════════════════════════
+function updateHeader(){
+  if(!user) return;
+  USERS.forEach(u => {
+    const el = document.getElementById('hdr'+u.name);
+    if(el) el.classList.toggle('active', u.name===user.name);
+    if(el) el.classList.toggle('inactive', u.name!==user.name);
+  });
+}
+
+function updateCounts(){
+  const w  = Object.values(sharedLib).filter(e=>e.status==='watched').length;
+  const wl = Object.values(sharedLib).filter(e=>e.status==='watchlist').length;
+  const sg = suggestions.length;
+  const my = Object.keys(lsGet('cm_mylog_'+(user?.name||''))||{}).length;
+  const pe = Object.keys(personalLib).length;
+
+  setCount('watched',   w);
+  setCount('watchlist', wl);
+  setCount('suggest',   sg);
+  setCount('mylog',     my);
+  setCount('personal',  pe);
+
+  if(user){
+    document.getElementById('hdrStats').textContent = `${w+wl} içerik · ${w} izlendi`;
+  }
+}
+function setCount(tab, n){
+  const el = document.getElementById('cnt-'+tab);
+  if(el) el.textContent = n||0;
+}
+
+// ════════════════════════════════════════════════════════════════
+// SEARCH
+// ════════════════════════════════════════════════════════════════
+let _lastQuery = '';
+function onSearchInput(v){
+  clearTimeout(searchTimer);
+  if(v.length < 2){ document.getElementById('searchGrid').innerHTML = ''; return; }
+  searchTimer = setTimeout(()=>doSearch(v), 380);
+}
+function setSType(t, btn){
+  searchType = t;
+  document.querySelectorAll('#pane-search .pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const q = document.getElementById('searchInput').value.trim();
+  if(q.length>1) doSearch(q);
+}
+async function doSearch(q){
+  _lastQuery = q;
+  try {
+    const type = searchType==='movie'?'movie':searchType==='tv'?'tv':'multi';
+    const url = `${TMDB_BASE}/search/${type}?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&language=tr-TR&include_adult=false`;
+    const data = await fetch(url).then(r=>r.json());
+    let items = (data.results||[]).filter(i=>i.poster_path||(i.title||i.name));
+    if(searchType==='all') items = items.filter(i=>i.media_type==='movie'||i.media_type==='tv');
+    renderSearchGrid(items.slice(0,18));
+  } catch(e){ console.error(e); }
+}
+function refreshSearchBadges(){
+  const q = document.getElementById('searchInput').value.trim();
+  if(q.length>1) doSearch(q);
+}
+
+function renderSearchGrid(items){
+  const grid = document.getElementById('searchGrid');
+  const p = partner();
+  const myLog = lsGet('cm_mylog_'+(user?.name||'')) || {};
+
+  grid.innerHTML = items.map(item => {
+    const tv = item.media_type==='tv'||(!!item.first_air_date&&!item.release_date);
+    const id = String(item.id);
+    const yr = (item.release_date||item.first_air_date||'').slice(0,4);
+    const se = sharedLib[id];
+
+    const poster = item.poster_path
+      ? `<img class="cimg" src="${IMG_BASE}${item.poster_path}" loading="lazy" alt=""/>`
+      : `<div class="cph">${tv?'📺':'🎬'}</div>`;
+
+    // Ortak liste badge
+    let badge = '';
+    if(se){
+      const bgc = se.status==='watched'?'var(--grbg)':'var(--blbg)';
+      const tc  = se.status==='watched'?'var(--green)':'var(--blue)';
+      const bdc = se.status==='watched'?'var(--grbd)':'var(--blbd)';
+      badge = `<div class="cbadge" style="background:${bgc};color:${tc};border:1px solid ${bdc}">${se.status==='watched'?'✓ İzledik':'🎬 Listede'}</div>`;
+    }
+
+    // Kullanıcı ikonları - kim izledi / listeledi
+    // İkon tipi: 👀 izledi, 📋 listesinde
+    const titleNorm = (item.title||item.name||'').toLowerCase();
+    const pKey = posterCacheKey(item.title||item.name, yr);
+
+    // Benim logumda mı? (id, tmdbId, başlık+yıl, ya da sadece başlık ile)
+    const normT = t => (t||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const myWatched = myLog[id] ||
+      Object.values(myLog).find(e=> String(e.tmdbId)===id) ||
+      Object.values(myLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.title)===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.altTitle||'')===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.origTitle||'')===normT(item.original_title||item.original_name||'') && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.title)===normT(item.title||item.name));
+    // Partner'ın logunda mı?
+    const pWatched  = partnerLog[id] ||
+      Object.values(partnerLog).find(e=> String(e.tmdbId)===id) ||
+      Object.values(partnerLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.title)===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.altTitle||'')===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.origTitle||'')===normT(item.original_title||item.original_name||'') && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.title)===normT(item.title||item.name));
+    // Benim listemde mi?
+    const myPersonal = personalLib[id] || Object.values(personalLib).find(e=>
+      e.title?.toLowerCase()===titleNorm && e.year===yr);
+    // Partner'ın personal listesinde mi? (Firebase'den)
+    const pPersonal = p ? (partnerPersonal[id] || Object.values(partnerPersonal).find(e=>
+      e.title?.toLowerCase()===titleNorm && e.year===yr)) : null;
+
+    let uicons = '';
+    if(myWatched)   uicons += `<span class="uicon" title="${user.name} izledi">${emoji(user.name)}👀</span>`;
+    if(pWatched)    uicons += `<span class="uicon" title="${p?.name||''} izledi">${p?emoji(p.name):''}👀</span>`;
+    if(myPersonal)  uicons += `<span class="uicon" title="${user.name} listesinde">${emoji(user.name)}📋</span>`;
+    if(pPersonal)   uicons += `<span class="uicon" title="${p?.name||''} listesinde">${p?emoji(p.name):''}📋</span>`;
+
+    const btnCls = se?(se.status==='watched'?'bgreen':'bblue'):'bghost';
+    const btnTxt = se?(se.status==='watched'?'✓ İzledik':'🎬 Listede'):'+ Ekle';
+    const ck = cacheItem(item);
+
+    return `<div class="card" onclick="openModal(getCached('${ck}'))">
+      ${poster}${badge}
+      ${uicons?`<div class="card-uicons">${uicons}</div>`:''}
+      <div class="cbody">
+        <div class="ctitle">${item.title||item.name||'—'}</div>
+        <div class="cmeta">
+          <span class="chip ${tv?'ctv':'cmovie'}">${tv?'Dizi':'Film'}</span>
+          ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
+          ${item.vote_average>0?`<span style="font-size:11px;color:var(--gold)">⭐${item.vote_average.toFixed(1)}</span>`:''}
+        </div>
+        <button class="btn bxs ${btnCls}" onclick="event.stopPropagation();openModal(getCached('${ck}'))">${btnTxt}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER: İZLEDİK
+// ════════════════════════════════════════════════════════════════
+function renderWatched(){
+  let items = Object.values(sharedLib).filter(e=>e.status==='watched');
+  const f = filters.watched;
+  if(f==='movie') items = items.filter(e=>!e.tv);
+  if(f==='tv')    items = items.filter(e=>!!e.tv);
+  if(tabSearchQuery.watched) items = items.filter(e=>(e.title||'').toLowerCase().includes(tabSearchQuery.watched));
+  items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  document.getElementById('watchedCnt').textContent = items.length+' yapım';
+  const el = document.getElementById('watchedList');
+  if(!items.length){ el.innerHTML = emptyHtml('🎬','Henüz ortak film izlemedik','Aramadan birlikte izledik olarak ekleyin'); return; }
+  el.innerHTML = items.map(e => {
+    const poster = e.poster
+      ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
+      : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const ck = cacheItem(e.raw?JSON.parse(e.raw):e);
+    // Kimin izlediğini göster (ratings'ten)
+    const watcherIcons = Object.keys(e.ratings||{}).filter(n=>USERS.find(u=>u.name===n))
+      .map(n=>`<span title="${n} izledi" style="font-size:15px">${emoji(n)}</span>`).join('');
+    // Puanlar
+    const ratingHtml = Object.entries(e.ratings||{}).map(([n,r])=>
+      `<span class="lrating-item">${emoji(n)} <span style="color:var(--gold)">★${r}</span></span>`
+    ).join('');
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody" style="flex:1">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div class="ltitle">${e.title}</div>
+          <div style="display:flex;gap:3px;flex-shrink:0">${watcherIcons||(`<span style="font-size:15px">${emoji(e.addedBy||'Fox')}</span>`)}</div>
+        </div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}</div>
+        ${ratingHtml?`<div class="lratings">${ratingHtml}</div>`:''}
+        <div class="lactions">
+          <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Düzenle</button>
+          <button class="btn bred bxs" onclick="removeShared('${e.id}')">Kaldır</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER: İZLEYECEĞİZ
+// ════════════════════════════════════════════════════════════════
+function renderWatchlist(){
+  let items = Object.values(sharedLib).filter(e=>e.status==='watchlist');
+  const f = filters.watchlist;
+  if(f==='movie') items = items.filter(e=>!e.tv);
+  if(f==='tv')    items = items.filter(e=>!!e.tv);
+  if(tabSearchQuery.watchlist) items = items.filter(e=>(e.title||'').toLowerCase().includes(tabSearchQuery.watchlist));
+  items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  document.getElementById('watchlistCnt').textContent = items.length+' yapım';
+  const el = document.getElementById('watchlistList');
+  if(!items.length){ el.innerHTML = emptyHtml('🎬','İzleyecek listeniz boş','Aramadan birlikte izleyeceğiz olarak ekleyin'); return; }
+  el.innerHTML = items.map(e => {
+    const poster = e.poster
+      ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
+      : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const ck = cacheItem(e.raw?JSON.parse(e.raw):e);
+    // wantedBy ikonları
+    const wb = e.wantedBy || (e.addedBy?[e.addedBy]:[]);
+    const wlIcons = wb.filter(n=>USERS.find(u=>u.name===n))
+      .map(n=>`<span title="${n} izlemek istiyor" style="font-size:15px">${emoji(n)}</span>`).join('');
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody" style="flex:1">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div class="ltitle">${e.title}</div>
+          <div style="display:flex;gap:3px;flex-shrink:0">${wlIcons}</div>
+        </div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}</div>
+        <div class="lactions">
+          <button class="btn bgreen bxs" onclick="markWatched('${e.id}')">✓ İzledik!</button>
+          <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Düzenle</button>
+          <button class="btn bred bxs" onclick="removeShared('${e.id}')">Kaldır</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER: ÖNERİLER
+// ════════════════════════════════════════════════════════════════
+function renderSuggestions(){
+  const el = document.getElementById('suggestList');
+  let sugsToShow = suggestions;
+  if(suggestSearchQ) sugsToShow = suggestions.filter(s=>(s.title||'').toLowerCase().includes(suggestSearchQ));
+  if(!sugsToShow.length){
+    el.innerHTML = emptyHtml('💡', suggestions.length ? 'Sonuç bulunamadı' : 'Henüz öneri yok', suggestions.length ? '' : 'Aramadan "Öneri Olarak At" ile gönder');
+    return;
+  }
+  el.innerHTML = sugsToShow.map(sug => {
+    const poster = sug.poster
+      ? `<img class="limg" src="${IMG_BASE}${sug.poster}" loading="lazy" alt=""/>`
+      : `<div class="lph">${sug.tv?'📺':'🎬'}</div>`;
+    const isMe = sug.suggestedBy === user.name;
+    const sugKey = sug.ts || sug.id;
+    const actions = isMe
+      ? `<span style="font-size:12px;color:var(--t3);font-style:italic">Onay bekleniyor…</span>
+         <button class="btn bred bxs" onclick="dismissSug('${sugKey}')">Kaldır</button>`
+      : `<button class="btn bgreen bxs" onclick="approveSug('${sugKey}')">✓ Kabul Et</button>
+         <button class="btn bred bxs"  onclick="dismissSug('${sugKey}')">✕ Reddet</button>`;
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${sug.title}</div>
+        <div class="lmeta"><span class="chip ${sug.tv?'ctv':'cmovie'}">${sug.tv?'Dizi':'Film'}</span>${sug.year?`<span style="font-size:11px;color:var(--t3)">${sug.year}</span>`:''}</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3);margin-bottom:4px">
+          <span style="font-size:15px">${emoji(sug.suggestedBy||'Fox')}</span>
+          <strong style="color:var(--t2)">${sug.suggestedBy||'?'}</strong> önerdi
+        </div>
+        ${sug.note?`<div class="lnote">"${sug.note}"</div>`:''}
+        <div class="lactions">${actions}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER: İZLEDİM (MyLog)
+// ════════════════════════════════════════════════════════════════
+function setMyLogView(v, btn){
+  myLogView = v;
+  const p = partner();
+  document.getElementById('mlv-me').classList.toggle('on', v==='me');
+  document.getElementById('mlv-partner').classList.toggle('on', v==='partner');
+  // Buton labellarını güncelle
+  document.getElementById('mlv-me').textContent = emoji(user.name)+' Benim';
+  if(p) document.getElementById('mlv-partner').textContent = emoji(p.name)+' '+p.name;
+  document.getElementById('mylogTitle').textContent = v==='me' ? 'Benim İzlediklerim 📓' : (p?p.name+"'in İzledikleri "+(p.emoji||''):'Partner');
+  document.getElementById('mylogSub').textContent = v==='me' ? 'Kişisel izleme günlüğün' : 'Sadece okuma';
+  renderMyLog();
+}
+function setMyLogFilter(f, btn){
+  myLogFilter = f;
+  document.querySelectorAll('#pane-mylog .pill:not(#mlv-me):not(#mlv-partner)').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  renderMyLog();
+}
+
+function getMyLog(){ return lsGet('cm_mylog_'+(user?.name||'')) || {}; }
+function saveMyLog(data){
+  lsSet('cm_mylog_'+user.name, data);
+  if(db && user){
+    const entries = Object.entries(data);
+    const CHUNK = 150;
+    if(entries.length <= CHUNK){
+      db.ref('userLogs/'+user.name).set(data).catch(()=>{});
+    } else {
+      // Büyük veri: önce sil, sonra chunk'larla update yaz
+      db.ref('userLogs/'+user.name).remove().then(()=>{
+        let delay = 0;
+        for(let i=0; i<entries.length; i+=CHUNK){
+          const chunk = Object.fromEntries(entries.slice(i, i+CHUNK));
+          setTimeout(()=> db.ref('userLogs/'+user.name).update(chunk).catch(()=>{}), delay);
+          delay += 600;
+        }
+      }).catch(()=> db.ref('userLogs/'+user.name).set(data).catch(()=>{}));
+    }
+  }
+  updateCounts();
+}
+
+function renderMyLog(){
+  const p = partner();
+  const items = myLogView==='me' ? Object.values(getMyLog()) : Object.values(partnerLog);
+  const doFilter = arr => {
+    if(myLogFilter==='movie') return arr.filter(e=>!e.tv);
+    if(myLogFilter==='tv')    return arr.filter(e=>!!e.tv);
+    return arr;
+  };
+  let filtered = doFilter(items).sort((a,b)=>(b.loggedAt||0)-(a.loggedAt||0));
+  if(mylogSearchQ) filtered = filtered.filter(e=>(e.title||'').toLowerCase().includes(mylogSearchQ));
+  const el = document.getElementById('mylogList');
+  document.getElementById('mylogSub').textContent = filtered.length+' film';
+
+  if(!filtered.length){
+    const msg = myLogView==='me' ? 'Henüz kayıt yok' : (p?p.name+' henüz bir şey eklememiş':'Partner bulunamadı');
+    el.innerHTML = emptyHtml('📓', msg, myLogView==='me'?'Aramadan "📓 Ben İzledim" ile ekle':'');
+    return;
+  }
+  const isMe = myLogView==='me';
+  el.innerHTML = filtered.map(e => {
+    const poster = e.poster
+      ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
+      : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const stars = e.rating>0 ? `<span style="color:var(--gold);font-size:12px">★ ${e.rating}</span>` : '';
+    const dateStr = e.loggedAt ? new Date(e.loggedAt).toLocaleDateString('tr-TR') : '';
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${e.title}</div>
+        <div class="lmeta">
+          <span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>
+          ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
+          ${stars}
+          ${dateStr?`<span style="font-size:11px;color:var(--t3)">${dateStr}</span>`:''}
+        </div>
+        ${e.note?`<div class="lnote">"${e.note}"</div>`:''}
+        <div class="lactions">${isMe?`<button class="btn bred bxs" onclick="removeMyLog('${e.id}')">Kaldır</button>`:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addToMyLog(item, rating, note){
+  const id = String(item.id||item.itemId||'');
+  const tv = !!(item.media_type==='tv'||(!!item.first_air_date&&!item.release_date));
+  const yr = (item.release_date||item.first_air_date||'').slice(0,4);
+  const log = getMyLog();
+  const posterPath = item.poster_path||item.poster||'';
+  // Poster'ı kalıcı cache'e kaydet
+  if(posterPath){ cachePoster(posterCacheKey(item.title||item.name, yr), posterPath); }
+  const entry = {
+    id, title: item.title||item.name||'—', year: yr,
+    poster: posterPath, tv, rating: rating||0,
+    note: note||'', loggedAt: Date.now()
+  };
+  log[id] = entry;
+  saveMyLog(log);
+  showToast('📓 İzledim listesine eklendi!');
+}
+
+function removeMyLog(id){
+  const log = getMyLog();
+  const backup = log[id] ? Object.assign({},log[id]) : null;
+  delete log[id]; saveMyLog(log); renderMyLog();
+  showToast('🗑️ Silindi', backup ? ()=>{
+    const l = getMyLog(); l[id]=backup; saveMyLog(l); renderMyLog(); showToast('↩ Geri alındı!');
+  } : null);
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// DEVAM EDİYORUZ SEKMESİ
+// ════════════════════════════════════════════════════════════════
+let ongoingFilter = 'all';
+let ongoingSearchQ = '';
+
+function setOngoingFilter(f, btn){
+  ongoingFilter = f;
+  document.querySelectorAll('#ongoing-all,#ongoing-mine').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderOngoing();
+}
+
+function filterOngoing(q){
+  ongoingSearchQ = q.toLowerCase().trim();
+  renderOngoing();
+}
+
+function renderOngoing(){
+  const el = document.getElementById('ongoingList');
+  if(!el) return;
+  let items = Object.values(sharedLib).filter(e=>e.status==='ongoing');
+  if(ongoingFilter==='mine') items = items.filter(e=>(e.addedBy===user.name)||(e.wantedBy&&e.wantedBy.includes(user.name)));
+  if(ongoingSearchQ) items = items.filter(e=>(e.title||'').toLowerCase().includes(ongoingSearchQ));
+  items.sort((a,b)=>(b.updatedAt||b.addedAt||0)-(a.updatedAt||a.addedAt||0));
+
+  const sub = document.getElementById('ongoingSub');
+  if(sub) sub.textContent = items.length + ' dizi/film';
+
+  if(!items.length){
+    el.innerHTML = emptyHtml('▶','Devam listesi boş','Aramadan "Devam Ediyoruz" olarak ekleyin');
+    return;
+  }
+
+  el.innerHTML = items.map(item=>{
+    const yr = item.year||'';
+    const poster = item.poster
+      ? `<img class="limg" src="${IMG_BASE}${item.poster}" loading="lazy"/>`
+      : `<div class="lph">${item.tv?'📺':'🎬'}</div>`;
+    const ratingFox = item.ratings?.Fox ? `🦊 ${'★'.repeat(Math.round(item.ratings.Fox))}` : '';
+    const ratingBun = item.ratings?.Bun ? `🐰 ${'★'.repeat(Math.round(item.ratings.Bun))}` : '';
+    const epBadge = item.episode
+      ? `<span style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbr);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">▶ ${item.episode}</span>`
+      : `<span style="color:var(--t3);font-size:11px">Bölüm girilmedi</span>`;
+    const safeTitle = (item.title||'').replace(/'/g,"\'").replace(/"/g,'&quot;');
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${item.title||'—'}</div>
+        <div class="lmeta">
+          <span class="chip ${item.tv?'ctv':'cmovie'}">${item.tv?'Dizi':'Film'}</span>
+          ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
+          ${epBadge}
+        </div>
+        ${ratingFox||ratingBun ? `<div style="font-size:11px;color:var(--gold);margin:4px 0">${ratingFox} ${ratingBun}</div>` : ''}
+        <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
+          <button class="btn bgold bxs" onclick="openEpisodeModal('${item.id}','${safeTitle}')">📍 Bölüm</button>
+          <button class="btn bgreen bxs" onclick="markOngoingWatched('${item.id}')">✓ Bitti</button>
+          <button class="btn bghost bxs" onclick="removeShared('${item.id}')">Kaldır</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openEpisodeModal(id, title){
+  const item = sharedLib[id];
+  const cur = item?.episode || '';
+  const ep = prompt(`"${title}" — Şu an nerede kaldınız?
+Örnek: S02E05 veya "3. Sezon 7. Bölüm"`, cur);
+  if(ep===null) return;
+  if(db) db.ref('sharedLib/'+id+'/episode').set(ep.trim());
+  if(db) db.ref('sharedLib/'+id+'/updatedAt').set(Date.now());
+  showToast('📍 Bölüm güncellendi!');
+}
+
+function markOngoingWatched(id){
+  if(!db) return;
+  db.ref('sharedLib/'+id).update({status:'watched', updatedAt:Date.now()});
+  showToast('✅ Tamamlandı olarak işaretlendi!');
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER: LİSTEM (Personal)
+// ════════════════════════════════════════════════════════════════
+function savePersonal(){
+  lsSet('cm_personal_'+user.name, personalLib);
+  // Firebase'e sync et - partner arama'da görebilsin
+  if(db && user) db.ref('userPersonal/'+user.name).set(personalLib).catch(()=>{});
+  updateCounts();
+}
+
+function renderPersonal(){
+  let items = Object.values(personalLib);
+  const f = filters.personal;
+  if(f==='movie') items = items.filter(e=>!e.tv);
+  if(f==='tv')    items = items.filter(e=>!!e.tv);
+  if(tabSearchQuery.personal) items = items.filter(e=>(e.title||'').toLowerCase().includes(tabSearchQuery.personal));
+  items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  document.getElementById('personalSub').textContent = items.length+' film';
+  const el = document.getElementById('personalList');
+  if(!items.length){ el.innerHTML = emptyHtml('👤','Listeniz boş','Aramadan "👤 Listemde Olsun" ile ekle'); return; }
+  el.innerHTML = items.map(e => {
+    const poster = e.poster
+      ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
+      : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${e.title}</div>
+        <div class="lmeta">
+          <span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>
+          ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
+        </div>
+        ${e.note&&e.note!=='Letterboxd watchlist'?`<div class="lnote">"${e.note}"</div>`:''}
+        <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
+          <button class="btn bgold bxs" onclick="suggestFromPersonal('${e.id}')">💡 Öner</button>
+          <button class="btn bghost bxs" onclick="addPersonalToShared('${e.id}')">🎬 İzleyeceğiz</button>
+          <button class="btn bred bxs" onclick="removePersonal('${e.id}')">Kaldır</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function removePersonal(id){
+  const backup = personalLib[id] ? Object.assign({},personalLib[id]) : null;
+  delete personalLib[id]; savePersonal(); renderPersonal();
+  showToast('🗑️ Silindi', backup ? ()=>{
+    personalLib[id] = backup; savePersonal(); renderPersonal(); showToast('↩ Geri alındı!');
+  } : null);
+}
+
+function addPersonalToShared(id){
+  const e = personalLib[id];
+  if(!e || !db){ showToast('❌ Firebase bağlantısı yok'); return; }
+  const sharedId = e.tmdbId || id;
+  db.ref('sharedLib/'+sharedId).set(Object.assign({}, e, {
+    id: sharedId, status:'watchlist', addedBy:user.name, addedAt:Date.now(),
+    ratings:{}, notes:{}, wantedBy:[user.name]
+  })).then(()=> showToast('🎬 İzleyeceğiz listesine eklendi!'))
+     .catch(err=>showToast('❌ '+err.message));
+}
+
+function suggestFromPersonal(id){
+  const e = personalLib[id];
+  if(!e || !db){ showToast('❌ Firebase bağlantısı yok'); return; }
+  const key = 'sug_'+Date.now();
+  db.ref('suggestions/'+key).set({ id:e.id, title:e.title, year:e.year, poster:e.poster||'',
+    tv:!!e.tv, suggestedBy:user.name, note:'', ts:Date.now(), raw:e.raw||'{}' })
+    .then(()=>showToast('💡 Öneri gönderildi!'))
+    .catch(err=>showToast('❌ '+err.message));
+}
+
+// ════════════════════════════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════════════════════════════
+function openModal(item){
+  if(!item) return;
+  currentItem = item;
+  currentDest = '';
+  currentRating = 0;
+  const tv = !!(item.media_type==='tv'||(!!item.first_air_date&&!item.release_date));
+  const yr = (item.release_date||item.first_air_date||'').slice(0,4);
+
+  // Poster
+  const mp = document.getElementById('mPoster');
+  if(item.poster_path) mp.innerHTML = `<img class="modal-poster" src="${IMG_BASE}${item.poster_path}" alt=""/>`;
+  else mp.innerHTML = `<div class="modal-poster-ph">${tv?'📺':'🎬'}</div>`;
+
+  document.getElementById('mTitle').textContent = item.title||item.name||'—';
+  document.getElementById('mMeta').innerHTML = `
+    <span class="chip ${tv?'ctv':'cmovie'}">${tv?'Dizi':'Film'}</span>
+    ${yr?`<span style="font-size:12px;color:var(--t3)">${yr}</span>`:''}
+    ${item.vote_average>0?`<span style="font-size:12px;color:var(--gold)">⭐${item.vote_average?.toFixed(1)}</span>`:''}
+  `;
+  document.getElementById('mOverview').textContent = item.overview||'';
+  document.getElementById('noteInput').value = '';
+  document.getElementById('ratingSection').style.display = 'none';
+  buildStars();
+  updateDestUI();
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('open'); currentItem=null; }
+
+function setDest(d){
+  currentDest = currentDest===d ? '' : d;
+  updateDestUI();
+}
+function updateDestUI(){
+  ['shared-watched','shared-watchlist','mylog','ongoing','suggest','personal'].forEach(d=>{
+    document.getElementById('dest-'+d)?.classList.toggle('on', d===currentDest);
+  });
+  document.getElementById('ratingSection').style.display =
+    (currentDest==='shared-watched'||currentDest==='mylog') ? 'block' : 'none';
+}
+
+// ════════════════════════════════════════════════════════════════
+// YILDIZLAR (5 yıldız, yarım adım)
+// ════════════════════════════════════════════════════════════════
+function buildStars(){
+  currentRating = 0;
+  const row = document.getElementById('starsRow');
+  row.innerHTML = '';
+  document.getElementById('ratingVal').textContent = 'Puan seçilmedi';
+  for(let i=1;i<=5;i++){
+    const w = document.createElement('span');
+    w.style.cssText = 'position:relative;display:inline-block;font-size:28px;cursor:pointer;user-select:none';
+    w.textContent = '★';
+    const lh = document.createElement('span');
+    lh.style.cssText = 'position:absolute;left:0;top:0;width:50%;height:100%;z-index:2';
+    lh.onmouseover = () => hlStars(i-0.5);
+    lh.onclick     = () => { currentRating = currentRating===(i-0.5)?0:i-0.5; hlStars(currentRating); updRatingVal(); };
+    const rh = document.createElement('span');
+    rh.style.cssText = 'position:absolute;right:0;top:0;width:50%;height:100%;z-index:2';
+    rh.onmouseover = () => hlStars(i);
+    rh.onclick     = () => { currentRating = currentRating===i?0:i; hlStars(currentRating); updRatingVal(); };
+    w.append(lh, rh);
+    row.append(w);
+  }
+  row.onmouseleave = () => { hlStars(currentRating); updRatingVal(); };
+}
+function hlStars(val){
+  document.querySelectorAll('#starsRow > span').forEach((s,i) => {
+    const full = i+1;
+    s.style.webkitTextFillColor = '';
+    s.style.webkitBackgroundClip = '';
+    s.style.backgroundClip = '';
+    s.style.background = 'none';
+    if(val>=full){
+      s.style.color = 'var(--gold)';
+    } else if(val>=full-0.5){
+      s.style.background = 'linear-gradient(to right, var(--gold) 50%, var(--t3) 50%)';
+      s.style.webkitBackgroundClip = 'text';
+      s.style.backgroundClip = 'text';
+      s.style.webkitTextFillColor = 'transparent';
+    } else {
+      s.style.color = 'var(--t3)';
+    }
+  });
+}
+function updRatingVal(){
+  document.getElementById('ratingVal').textContent = currentRating>0 ? `★ ${currentRating} / 5` : 'Puan seçilmedi';
+}
+
+// ════════════════════════════════════════════════════════════════
+// KAYDET
+// ════════════════════════════════════════════════════════════════
+async function saveItem(){
+  if(!currentItem || !currentDest){ showToast('❌ Kategori seçin'); return; }
+  const item = currentItem;
+  const dest = currentDest;
+  const rating = currentRating;
+  const note = document.getElementById('noteInput').value.trim();
+  closeModal();
+
+  const id = String(item.id||'');
+  const tv = !!(item.media_type==='tv'||(!!item.first_air_date&&!item.release_date));
+  const yr = (item.release_date||item.first_air_date||'').slice(0,4);
+  const base = {
+    id, title:item.title||item.name||'—', year:yr,
+    poster:item.poster_path||'', tv, raw:JSON.stringify(item),
+    addedBy:user.name, addedAt:Date.now()
+  };
+
+  // Poster'ı cache'e kaydet (kalıcı)
+  const posterSrc = item.poster_path||item.poster||'';
+  if(posterSrc){ cachePoster(posterCacheKey(base.title, yr), posterSrc); }
+
+  try {
+    if(dest==='shared-watched'||dest==='shared-watchlist'){
+      if(!db){ showToast('❌ Firebase bağlantısı yok'); return; }
+      const status = dest==='shared-watched'?'watched':'watchlist';
+      const prev   = sharedLib[id]||{};
+      const ratings = Object.assign({}, prev.ratings||{});
+      const notes   = Object.assign({}, prev.notes||{});
+      const wantedBy = prev.wantedBy ? [...prev.wantedBy] : [user.name];
+      if(!wantedBy.includes(user.name)) wantedBy.push(user.name);
+      if(rating>0) ratings[user.name] = rating;
+      if(note)     notes[user.name]   = note;
+      await db.ref('sharedLib/'+id).set(Object.assign({}, base, {status, ratings, notes, wantedBy}));
+      showToast(status==='watched'?'✓ Ortak arşive eklendi!':'🎬 İzleyeceğiz listesine eklendi!');
+
+    } else if(dest==='mylog'){
+      addToMyLog(item, rating, note);
+      if(activeTab()==='mylog') renderMyLog();
+
+    } else if(dest==='suggest'){
+      if(!db){ showToast('❌ Firebase bağlantısı yok'); return; }
+      await db.ref('suggestions/sug_'+Date.now()).set(
+        Object.assign({}, base, {suggestedBy:user.name, note, ts:Date.now()})
+      );
+      showToast('💡 Öneri gönderildi!');
+
+    } else if(dest==='personal'){
+      personalLib[id] = Object.assign({}, base, {note, status:'personal'});
+      savePersonal();
+      if(activeTab()==='personal') renderPersonal();
+      showToast('👤 Listemize eklendi!');
+
+    } else if(dest==='ongoing'){
+      if(!db){ showToast('❌ Firebase bağlantısı yok'); return; }
+      const prev2 = sharedLib[id]||{};
+      const ratings2 = Object.assign({}, prev2.ratings||{});
+      const wantedBy2 = prev2.wantedBy ? [...prev2.wantedBy] : [user.name];
+      if(!wantedBy2.includes(user.name)) wantedBy2.push(user.name);
+      if(rating>0) ratings2[user.name] = rating;
+      await db.ref('sharedLib/'+id).set(Object.assign({}, base, {status:'ongoing', ratings:ratings2, wantedBy:wantedBy2, updatedAt:Date.now()}));
+      showToast('▶ Devam Ediyoruz listesine eklendi!');
+    }
+  } catch(err){
+    const m = String(err.message||err);
+    showToast(m.includes('PERMISSION_DENIED')?'❌ Firebase izin hatası! Rules düzelt.':'❌ '+m.slice(0,60));
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// FIREBASE İŞLEMLERİ
+// ════════════════════════════════════════════════════════════════
+async function markWatched(id){
+  const item = sharedLib[id];
+  if(!item||!db) return;
+  const ck = cacheItem(item);
+  currentItem = item.raw?JSON.parse(item.raw):item;
+  currentDest = 'shared-watched';
+  currentRating = 0;
+  document.getElementById('mTitle').textContent = item.title;
+  document.getElementById('mPoster').innerHTML = item.poster
+    ? `<img class="modal-poster" src="${IMG_BASE}${item.poster}" alt=""/>`
+    : `<div class="modal-poster-ph">${item.tv?'📺':'🎬'}</div>`;
+  document.getElementById('mMeta').innerHTML = `<span class="chip ${item.tv?'ctv':'cmovie'}">${item.tv?'Dizi':'Film'}</span>`;
+  document.getElementById('mOverview').textContent = '';
+  document.getElementById('noteInput').value = '';
+  buildStars();
+  updateDestUI();
+  document.getElementById('modal').classList.add('open');
+}
+
+async function removeShared(id){
+  if(!db) return;
+  const backup = sharedLib[id] ? Object.assign({},sharedLib[id]) : null;
+  try{
+    await db.ref('sharedLib/'+id).remove();
+    showToast('🗑️ Silindi', backup ? async()=>{
+      await db.ref('sharedLib/'+id).set(backup);
+      showToast('↩ Geri alındı!');
+    } : null);
+  } catch(e){ showToast('❌ '+e.message); }
+}
+
+async function approveSug(key){
+  try {
+    const sug = suggestions.find(s=>String(s.ts)===String(key)||String(s.id)===String(key));
+    if(!sug){ showToast('❌ Öneri bulunamadı'); return; }
+    const itemId = String(sug.id||'');
+    if(!itemId){ showToast('❌ Film ID bulunamadı'); return; }
+    await db.ref('sharedLib/'+itemId).set({
+      id:itemId, title:sug.title, year:sug.year||'', poster:sug.poster||'',
+      tv:!!sug.tv, raw:sug.raw||'{}', status:'watchlist',
+      addedBy:sug.suggestedBy, addedAt:Date.now(),
+      ratings:{}, notes:sug.note?{[sug.suggestedBy]:sug.note}:{},
+      wantedBy:[sug.suggestedBy]
+    });
+    const snap = await db.ref('suggestions').once('value');
+    const all  = snap.val()||{};
+    const fbKey = Object.keys(all).find(k=>String(all[k].ts)===String(key)||String(all[k].id)===String(key));
+    if(fbKey) await db.ref('suggestions/'+fbKey).remove();
+    showToast('✅ Kabul edildi! İzleyeceğiz listesine eklendi.');
+  } catch(e){ showToast('❌ '+e.message); }
+}
+
+async function dismissSug(key){
+  try {
+    const snap = await db.ref('suggestions').once('value');
+    const all  = snap.val()||{};
+    const fbKey = Object.keys(all).find(k=>String(all[k].ts)===String(key)||String(all[k].id)===String(key));
+    const backup = fbKey ? all[fbKey] : null;
+    if(fbKey) await db.ref('suggestions/'+fbKey).remove();
+    showToast('🗑️ Öneri silindi', backup && fbKey ? async()=>{
+      await db.ref('suggestions/'+fbKey).set(backup);
+      showToast('↩ Geri alındı!');
+    } : null);
+  } catch(e){ showToast('❌ '+e.message); }
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// TAB SEARCH (listede ara)
+// ════════════════════════════════════════════════════════════════
+let tabSearchQuery = { watched:'', watchlist:'', personal:'' };
+
+function filterTabList(section, q){
+  tabSearchQuery[section] = q.toLowerCase().trim();
+  if(section==='watched')   renderWatched();
+  if(section==='watchlist') renderWatchlist();
+  if(section==='personal')  renderPersonal();
+}
+
+let suggestSearchQ = '';
+function filterSuggestions(q){
+  suggestSearchQ = q.toLowerCase().trim();
+  renderSuggestions();
+}
+
+let mylogSearchQ = '';
+function filterMyLog(q){
+  mylogSearchQ = q.toLowerCase().trim();
+  renderMyLog();
+}
+
+// ════════════════════════════════════════════════════════════════
+// FILTER
+// ════════════════════════════════════════════════════════════════
+function setFilter(section, f, btn){
+  filters[section] = f;
+  const pane = document.getElementById('pane-'+section);
+  pane.querySelectorAll('.pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if(section==='watched')   renderWatched();
+  if(section==='watchlist') renderWatchlist();
+  if(section==='personal')  renderPersonal();
+}
+
+// ════════════════════════════════════════════════════════════════
+// LETTERBOXD IMPORT
+// ════════════════════════════════════════════════════════════════
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/);
+  const header = lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).filter(l=>l.trim()).map(line=>{
+    const cols=[]; let cur=''; let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"') inQ=!inQ;
+      else if(ch===','&&!inQ){ cols.push(cur.trim()); cur=''; }
+      else cur+=ch;
+    }
+    cols.push(cur.trim());
+    const obj={};
+    header.forEach((h,i)=>obj[h]=(cols[i]||'').replace(/^"|"$/g,'').trim());
+    return obj;
+  });
+}
+
+async function importLetterboxdFiles(event){
+  for(const file of Array.from(event.target.files)){
+    await importSingleCSV(file);
+  }
+  event.target.value='';
+}
+
+async function importSingleCSV(file){
+  const fn = file.name.toLowerCase();
+  const text = await file.text();
+  const rows = parseCSV(text);
+  let count = 0;
+
+  if(fn.includes('watched') && !fn.includes('watchlist')){
+    // watched.csv → İzledim (myLog)
+    const log = getMyLog();
+    const toFetch = [];
+    for(const row of rows){
+      const name=row['Name']||''; const year=row['Year']||''; const date=row['Date']||'';
+      if(!name) continue;
+      const id='lb_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,28)+'_'+year;
+      if(!log[id]){
+        // Önce cache'den poster dene
+        const pk = posterCacheKey(name, year);
+        const cachedP = getCachedPoster(pk);
+        log[id]={ id, title:name, year, poster:cachedP||'', tv:false, rating:0,
+          note:'', loggedAt:date?new Date(date).getTime():Date.now(), fromLetterboxd:true };
+        if(!cachedP) toFetch.push(id);
+        count++;
+      }
+    }
+    saveMyLog(log);
+    renderMyLog();
+    showToast(`✅ ${count} film eklendi! Firebase'e yazılıyor…`);
+    fetchPostersForLog(toFetch.slice(0,150));
+    // saveMyLog zaten chunk sistemiyle Firebase'e yazıyor
+    // Ek kontrol: 5sn sonra tamamının yazıldığını doğrula
+    if(db && user){
+      setTimeout(async()=>{
+        try{
+          const snap = await db.ref('userLogs/'+user.name).once('value');
+          const fbCount = Object.keys(snap.val()||{}).length;
+          const localCount = Object.keys(log).length;
+          if(fbCount < localCount){
+            showToast(`🔄 Eksik sync (${fbCount}/${localCount}), tekrar deneniyor…`);
+            db.ref('userLogs/'+user.name).set(log)
+              .then(()=>showToast('✅ Senkronize tamam! Partner görebilir.'))
+              .catch(()=>{});
+          } else {
+            showToast(`✅ ${fbCount} film Firebase'de! Partner görebilir.`);
+          }
+        }catch(e){}
+      }, 8000);
+    }
+
+  } else if(fn.includes('ratings')){
+    // ratings.csv → Mevcut logdaki puanları güncelle
+    const log = getMyLog(); let updated=0;
+    for(const row of rows){
+      const name=row['Name']||''; const year=row['Year']||''; const r=parseFloat(row['Rating'])||0;
+      if(!name||!r) continue;
+      const id='lb_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,28)+'_'+year;
+      if(log[id]){ log[id].rating=r; updated++; }
+    }
+    saveMyLog(log); renderMyLog();
+    showToast(`✅ ${updated} film puanı güncellendi!`);
+
+  } else if(fn.includes('watchlist')){
+    // watchlist.csv → Kişisel liste
+    const toFetch = [];
+    for(const row of rows){
+      const name=row['Name']||''; const year=row['Year']||'';
+      if(!name) continue;
+      const id='lb_wl_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,25)+'_'+year;
+      if(!personalLib[id]){
+        const pk = posterCacheKey(name, year);
+        const cachedP = getCachedPoster(pk);
+        personalLib[id]={ id, title:name, year, poster:cachedP||'', tv:false,
+          status:'personal', note:'Letterboxd watchlist', addedAt:Date.now(), fromLetterboxd:true };
+        if(!cachedP) toFetch.push(id);
+        count++;
+      }
+    }
+    savePersonal(); renderPersonal();
+    showToast(`✅ ${count} film listenize eklendi! Posterler yükleniyor…`);
+    fetchPostersForPersonal(toFetch.slice(0,150));
+  } else {
+    showToast('❓ watched.csv, watchlist.csv veya ratings.csv kullanın.');
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// POSTER ÇEKME (TMDB + Cache)
+// ════════════════════════════════════════════════════════════════
+async function tmdbFindPoster(title, year){
+  const r = await tmdbFindPosterWithId(title, year);
+  return r ? r.poster : null;
+}
+
+async function tmdbFindPosterWithId(title, year){
+  const pk = posterCacheKey(title, year);
+  const cached = getCachedPoster(pk);
+  if(cached) return {poster: cached, tmdbId: null};
+  try {
+    const q = encodeURIComponent(title);
+    // TR + EN'de ara
+    const [resTR, resEN] = await Promise.all([
+      fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=tr-TR`).then(r=>r.json()),
+      fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=en-US`).then(r=>r.json()),
+    ]);
+    const fromTR = (resTR.results||[]).filter(r=>r.poster_path&&(r.media_type==='movie'||r.media_type==='tv'));
+    const fromEN = (resEN.results||[]).filter(r=>r.poster_path&&(r.media_type==='movie'||r.media_type==='tv'));
+    const allResults = [...fromTR];
+    for(const r of fromEN){ if(!allResults.find(x=>x.id===r.id)) allResults.push(r); }
+    if(!allResults.length) return null;
+    const exact = allResults.find(r=>(r.release_date||r.first_air_date||'').startsWith(year));
+    const hit = exact||allResults[0];
+    cachePoster(pk, hit.poster_path);
+    // TR ve EN başlıklarını cacheKey olarak da kaydet (çapraz eşleşme)
+    if(hit.title&&hit.name) cachePoster(posterCacheKey(hit.name, year), hit.poster_path);
+    return {
+      poster: hit.poster_path,
+      tmdbId: hit.id,
+      tmdbTitle: hit.title||hit.name,
+      originalTitle: hit.original_title||hit.original_name||''
+    };
+  } catch(e){ return null; }
+}
+
+async function fetchPostersForLog(ids){
+  if(!ids?.length) return;
+  const log = getMyLog();
+  let updated=0;
+  for(let i=0;i<ids.length;i++){
+    const id=ids[i]; const e=log[id];
+    if(!e||e.poster) continue;
+    const pResult = await tmdbFindPosterWithId(e.title, e.year);
+    if(pResult){
+      const updates = {poster: pResult.poster};
+      if(pResult.tmdbId && id.startsWith('lb_')){
+        updates.tmdbId   = String(pResult.tmdbId);
+        updates.tmdbTitle  = pResult.tmdbTitle || e.title;
+        updates.origTitle  = pResult.originalTitle || '';
+        // Türkçe başlık farklıysa kaydet
+        if(pResult.tmdbTitle && pResult.tmdbTitle.toLowerCase() !== e.title.toLowerCase()){
+          updates.altTitle = pResult.tmdbTitle;
+        }
+      }
+      log[id]=Object.assign({},e,updates); updated++;
+    }
+    if(i%5===4||i===ids.length-1){
+      saveMyLog(log);
+      if(activeTab()==='mylog') renderMyLog();
+      await new Promise(r=>setTimeout(r,300));
+    }
+  }
+  if(updated>0) showToast(`🖼️ ${updated} poster yüklendi!`);
+}
+
+async function fetchPostersForPersonal(ids){
+  if(!ids?.length) return;
+  let updated=0;
+  for(let i=0;i<ids.length;i++){
+    const id=ids[i]; const e=personalLib[id];
+    if(!e||e.poster) continue;
+    const p = await tmdbFindPoster(e.title, e.year);
+    if(p){ personalLib[id]=Object.assign({},e,{poster:p}); updated++; }
+    if(i%5===4||i===ids.length-1){
+      savePersonal();
+      if(activeTab()==='personal') renderPersonal();
+      await new Promise(r=>setTimeout(r,300));
+    }
+  }
+  if(updated>0) showToast(`🖼️ ${updated} poster yüklendi!`);
+}
+
+function fetchMissingPosters(){
+  const log = getMyLog();
+  const missingLog = Object.keys(log).filter(k=>log[k].fromLetterboxd&&!log[k].poster).slice(0,50);
+  const missingPer = Object.keys(personalLib).filter(k=>personalLib[k].fromLetterboxd&&!personalLib[k].poster).slice(0,50);
+  if(missingLog.length) fetchPostersForLog(missingLog);
+  if(missingPer.length) setTimeout(()=>fetchPostersForPersonal(missingPer), 3000);
+}
+
+// ════════════════════════════════════════════════════════════════
+// KULLANICI DEĞİŞİMİ - otomatik yenile fallback içinde
+// ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+// YARDIMCILAR
+// ════════════════════════════════════════════════════════════════
+function emptyHtml(ico, txt, sub){
+  return `<div class="empty"><div class="eico">${ico}</div><div class="etxt">${txt}</div>${sub?`<div class="esub">${sub}</div>`:''}</div>`;
+}
+
+let _toastTimer;
+let _undoAction = null;
+
+function showToast(msg, undoFn){
+  const t   = document.getElementById('toast');
+  const m   = document.getElementById('toastMsg');
+  const btn = document.getElementById('toastUndo');
+  m.textContent = msg;
+  _undoAction = undoFn || null;
+  btn.style.display = undoFn ? 'inline-block' : 'none';
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>{ t.classList.remove('show'); _undoAction=null; }, undoFn?5000:3000);
+}
+
+function doUndo(){
+  if(_undoAction){ _undoAction(); _undoAction=null; }
+  const t = document.getElementById('toast');
+  t.classList.remove('show');
+  document.getElementById('toastUndo').style.display='none';
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// YENİ SEZON BİLDİRİMLERİ
+// ════════════════════════════════════════════════════════════════
+async function requestNotifPermission(){
+  if(!('Notification' in window)) return false;
+  if(Notification.permission==='granted') return true;
+  const result = await Notification.requestPermission();
+  return result==='granted';
+}
+
+async function checkNewSeasons(){
+  if(!('Notification' in window)) return;
+  const lastCheck = lsGet('cm_season_check') || 0;
+  if(Date.now() - lastCheck < 12*60*60*1000) return;
+  lsSet('cm_season_check', Date.now());
+
+  // SADECE "Devam Ediyoruz" listesindeki dizileri kontrol et
+  const tvShows = [];
+  Object.values(sharedLib)
+    .filter(e => e.status==='ongoing' && e.tv && e.id && !e.id.startsWith('lb_'))
+    .forEach(e => {
+      if(!tvShows.find(t=>t.id===e.id))
+        tvShows.push({id:e.id, title:e.title, episode:e.episode||''});
+    });
+
+  if(!tvShows.length) return;
+  const knownSeasons = lsGet('cm_known_seasons') || {};
+  const newShows = [];
+
+  for(const show of tvShows.slice(0,20)){ // Max 20 dizi kontrol et
+    try{
+      const res = await fetch(`${TMDB_BASE}/tv/${show.id}?api_key=${TMDB_KEY}&language=tr-TR`);
+      const data = await res.json();
+      if(!data.number_of_seasons) continue;
+      const currentSeasons = data.number_of_seasons;
+      const known = knownSeasons[show.id];
+      if(known !== undefined && currentSeasons > known){
+        newShows.push({
+          title: show.title,
+          seasons: currentSeasons,
+          prev: known,
+          poster: data.poster_path,
+          nextAir: data.next_episode_to_air?.air_date
+        });
+      }
+      knownSeasons[show.id] = currentSeasons;
+      await new Promise(r=>setTimeout(r,150)); // rate limit
+    }catch(e){}
+  }
+  lsSet('cm_known_seasons', knownSeasons);
+
+  // Bildirim göster
+  if(newShows.length > 0){
+    const perm = await requestNotifPermission();
+    if(perm){
+      newShows.forEach(show=>{
+        const n = new Notification('🎬 Yeni Sezon! ' + show.title, {
+          body: `Sezon ${show.prev} → ${show.seasons} yeni sezon! ${show.episode ? '(Kaldığın yer: '+show.episode+')' : ''}`,
+          icon: show.poster ? `${IMG_BASE}${show.poster}` : '/favicon.ico',
+          tag: 'new-season-'+show.title,
+        });
+        n.onclick = ()=>{ window.focus(); showTab('ongoing',document.getElementById('tab-ongoing')); n.close(); };
+      });
+    }
+    // Uygulama içi bildirim de göster
+    showSeasonAlert(newShows);
+  }
+}
+
+function showSeasonAlert(shows){
+  const existing = document.getElementById('seasonAlert');
+  if(existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = 'seasonAlert';
+  div.style.cssText = `position:fixed;top:80px;right:16px;z-index:4000;background:var(--surface);border:1px solid var(--goldbr);border-radius:14px;padding:14px 16px;max-width:300px;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:slideIn .3s ease`;
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-weight:700;color:var(--gold);font-size:14px">🎉 Yeni Sezon!</span>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;padding:0">✕</button>
+    </div>
+    ${shows.map(s=>`<div style="font-size:13px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--s3)">
+      <strong style="color:var(--t1)">${s.title}</strong><br>
+      <span style="color:var(--t3)">Sezon ${s.prev} → <span style="color:var(--green);font-weight:700">${s.seasons}</span></span>
+    </div>`).join('')}
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn bgold bxs" style="flex:1;justify-content:center" onclick="showTab('ongoing',document.getElementById('tab-ongoing'));this.closest('#seasonAlert').remove()">▶ Devam Listesine Git</button>
+    </div>`;
+  document.body.appendChild(div);
+}
+
+// Bildirim izni iste butonu (settings içinde)
+async function enableNotifications(){
+  const ok = await requestNotifPermission();
+  if(ok){
+    showToast('🔔 Bildirimler açık! Yeni sezon kontrolü yapılacak.');
+    lsSet('cm_notif_enabled', true);
+    lsSet('cm_season_check', 0); // Hemen kontrol et
+    setTimeout(checkNewSeasons, 1000);
+  } else {
+    showToast('❌ Bildirim izni verilmedi.');
+  }
+}
+
+function toggleNotifMenu(){
+  const m = document.getElementById('notifMenu');
+  m.style.display = m.style.display==='none' ? 'block' : 'none';
+  if(m.style.display==='block'){
+    setTimeout(()=>document.addEventListener('click', function _close(e){
+      if(!m.contains(e.target) && !document.getElementById('notifBtn').contains(e.target)){
+        m.style.display='none'; document.removeEventListener('click',_close);
+      }
+    }), 10);
+  }
+}
+
+// Header scroll efekti
+window.addEventListener('scroll', () => {
+  document.querySelector('.hdr').classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+</script>
+</body>
+</html>
