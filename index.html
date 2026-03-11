@@ -194,7 +194,6 @@ img{display:block}
 
 /* ── TOAST ──────────────────────────────────────────────────── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--s2);color:var(--t1);padding:10px 20px;border-radius:24px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.5);z-index:9999;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;border:1px solid var(--s3);white-space:nowrap}
-.toast.undo{white-space:normal;padding:10px 16px}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
@@ -213,12 +212,6 @@ img{display:block}
 .ep-ep-btn{padding:8px 4px;border-radius:8px;border:2px solid var(--s3);background:var(--s2);color:var(--t2);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center}
 .ep-ep-btn:hover{border-color:var(--blue);background:var(--blbg);color:var(--blue)}
 .ep-ep-on{border-color:var(--gold)!important;background:var(--goldbg)!important;color:var(--gold)!important}
-
-
-.tab-search-bar{position:relative;margin:12px 0 8px}
-.tab-search-bar .sinp-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
-.tab-sinp{width:100%;box-sizing:border-box;background:var(--s2);border:1.5px solid var(--s3);border-radius:10px;padding:9px 12px 9px 34px;color:var(--t1);font-size:13px;outline:none}
-.tab-sinp:focus{border-color:var(--gold)}
 
 </style>
 </head>
@@ -301,7 +294,6 @@ img{display:block}
     <button class="tab on" id="tab-search"    onclick="showTab('search',this)">🔍 Ara</button>
     <button class="tab"    id="tab-watched"   onclick="showTab('watched',this)">✓ İzledik <span class="bcount" id="cnt-watched">0</span></button>
     <button class="tab"    id="tab-watchlist" onclick="showTab('watchlist',this)">🎬 İzleyeceğiz <span class="bcount" id="cnt-watchlist">0</span></button>
-    <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
     <button class="tab"    id="tab-suggest"   onclick="showTab('suggest',this)">💡 Öneriler <span class="bcount" id="cnt-suggest">0</span></button>
     <button class="tab"    id="tab-mylog"     onclick="showTab('mylog',this)">📓 İzledim <span class="bcount" id="cnt-mylog">0</span></button>
     <button class="tab"    id="tab-personal"  onclick="showTab('personal',this)">👤 Listem <span class="bcount" id="cnt-personal">0</span></button>
@@ -338,6 +330,8 @@ img{display:block}
         <button class="pill"    onclick="setFilter('watched','tv',this)">Dizi</button>
       </div>
     </div>
+
+    <div style="position:relative;margin:0 0 12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span><input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="İzlediklerimizde ara…" oninput="filterWatched(this.value)"/></div>
     <div id="watchedList"></div>
   </div>
 
@@ -354,6 +348,8 @@ img{display:block}
         <button class="pill"    onclick="setFilter('watchlist','tv',this)">Dizi</button>
       </div>
     </div>
+
+    <div style="position:relative;margin:0 0 12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span><input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="İzleyeceklerimizde ara…" oninput="filterWatchlist(this.value)"/></div>
     <div id="watchlistList"></div>
   </div>
 
@@ -365,6 +361,8 @@ img{display:block}
         <div class="seccnt">Birbiriize film/dizi önerin</div>
       </div>
     </div>
+
+    <div style="position:relative;margin:0 0 12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span><input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="Önerilerde ara…" oninput="filterSuggest(this.value)"/></div>
     <div id="suggestList"></div>
   </div>
 
@@ -388,6 +386,8 @@ img{display:block}
         </label>
       </div>
     </div>
+
+    <div style="position:relative;margin:0 0 12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span><input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="İzledimde ara…" oninput="filterMyLog(this.value)"/></div>
     <div id="mylogList"></div>
   </div>
 
@@ -395,18 +395,17 @@ img{display:block}
   <div id="pane-personal" style="display:none" class="wrap">
     <div class="sechdr">
       <div>
-        <div class="sectitle serif" id="personalTitle">Listem 👤</div>
+        <div class="sectitle serif">Listem 👤</div>
         <div class="seccnt" id="personalSub">Kişisel liste</div>
       </div>
       <div class="filter-row">
-        <button class="pill on" id="plv-me"      onclick="setPersonalView('me',this)">🦊 Benim</button>
-        <button class="pill"    id="plv-partner"  onclick="setPersonalView('partner',this)">🐰 Partner</button>
-        <span style="color:var(--s3);margin:0 2px">|</span>
-        <button class="pill on" id="plf-all"   onclick="setPersonalFilter('all',this)">Hepsi</button>
-        <button class="pill"    id="plf-movie" onclick="setPersonalFilter('movie',this)">Film</button>
-        <button class="pill"    id="plf-tv"    onclick="setPersonalFilter('tv',this)">Dizi</button>
+        <button class="pill on" onclick="setFilter('personal','all',this)">Hepsi</button>
+        <button class="pill"    onclick="setFilter('personal','movie',this)">Film</button>
+        <button class="pill"    onclick="setFilter('personal','tv',this)">Dizi</button>
       </div>
     </div>
+
+    <div style="position:relative;margin:0 0 12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span><input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="Listemde ara…" oninput="filterPersonal(this.value)"/></div>
     <div id="personalList"></div>
   </div>
 
@@ -417,14 +416,10 @@ img{display:block}
         <div class="sectitle serif">Devam Ediyoruz ▶</div>
         <div class="seccnt" id="ongoingSub">Birlikte izlediğiniz diziler</div>
       </div>
-      <div class="filter-row">
-        <button class="pill on" id="ongoing-all"  onclick="setOngoingFilter('all',this)">Hepsi</button>
-        <button class="pill"    id="ongoing-mine" onclick="setOngoingFilter('mine',this)">Benimkiler</button>
-      </div>
     </div>
-    <div style="position:relative;margin:0 0 12px">
-      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
-      <input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="Devam listesinde ara…" oninput="filterOngoing(this.value)"/>
+    <div class="tab-search-bar">
+      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input class="tab-sinp" autocomplete="off" placeholder="Devam listesinde ara…" oninput="filterOngoing(this.value)"/>
     </div>
     <div id="ongoingList"></div>
   </div>
@@ -684,13 +679,17 @@ function startApp(){
   db.ref('userLogs/'+user.name).on('value', snap => {
     const fbLog = snap.val() || {};
     if(Object.keys(fbLog).length > 0){
+      // Firebase veriyi localLog ile merge - localLog (yeni eklemeler) öncelikli
       const localLog = lsGet('cm_mylog_'+user.name) || {};
+      // Sadece kendi user adıyla kaydedilmiş veriler
       const merged = Object.assign({}, fbLog, localLog);
       lsSet('cm_mylog_'+user.name, merged);
-      updateCounts();
-      if(activeTab()==='mylog') renderMyLog();
-      refreshSearchBadges();
+    } else {
+      // Firebase boşsa localLog'u kullan
     }
+    updateCounts();
+    if(activeTab()==='mylog') renderMyLog();
+    refreshSearchBadges();
   });
 
   if(p){
@@ -824,6 +823,8 @@ function rerenderActive(){
   if(t==='watched')   renderWatched();
   if(t==='watchlist') renderWatchlist();
   if(t==='suggest')   renderSuggestions();
+  if(t==='ongoing')   renderOngoing();
+  if(t==='personal')  renderPersonal();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -935,16 +936,10 @@ function renderSearchGrid(items){
     const myWatched = myLog[id] ||
       Object.values(myLog).find(e=> e.tmdbId && String(e.tmdbId)===id) ||
       safeMatch(myLog,'title',itemTitle,yr) ||
-      safeMatch(myLog,'title',itemOrigTitle,yr) ||
-      safeMatch(myLog,'altTitle',itemTitle,yr) ||
-      safeMatch(myLog,'origTitle',itemOrigTitle,yr);
-    // Partner'ın logunda mı?
+      safeMatch(myLog,'title',itemOrigTitle,yr);
+    // Partner'ın logunda mı? (sadece kesin eşleşme)
     const pWatched = partnerLog[id] ||
-      Object.values(partnerLog).find(e=> e.tmdbId && String(e.tmdbId)===id) ||
-      safeMatch(partnerLog,'title',itemTitle,yr) ||
-      safeMatch(partnerLog,'title',itemOrigTitle,yr) ||
-      safeMatch(partnerLog,'altTitle',itemTitle,yr) ||
-      safeMatch(partnerLog,'origTitle',itemOrigTitle,yr);
+      Object.values(partnerLog).find(e=> e.tmdbId && String(e.tmdbId)===id);
     // Benim listemde mi?
     const myPersonal = personalLib[id] ||
       safeMatch(personalLib,'title',itemTitle,yr) ||
@@ -979,11 +974,20 @@ function renderSearchGrid(items){
 // ════════════════════════════════════════════════════════════════
 // RENDER: İZLEDİK
 // ════════════════════════════════════════════════════════════════
+// ════ TAB ARAMA DEĞİŞKENLERİ ═══════════════════════════════════
+let watchedQ='', watchlistQ='', suggestQ='', mylogQ='', personalQ='';
+function filterWatched(q){ watchedQ=q.toLowerCase().trim(); renderWatched(); }
+function filterWatchlist(q){ watchlistQ=q.toLowerCase().trim(); renderWatchlist(); }
+function filterSuggest(q){ suggestQ=q.toLowerCase().trim(); renderSuggestions(); }
+function filterMyLog(q){ mylogQ=q.toLowerCase().trim(); renderMyLog(); }
+function filterPersonal(q){ personalQ=q.toLowerCase().trim(); renderPersonal(); }
+
 function renderWatched(){
   let items = Object.values(sharedLib).filter(e=>e.status==='watched');
   const f = filters.watched;
   if(f==='movie') items = items.filter(e=>!e.tv);
   if(f==='tv')    items = items.filter(e=>!!e.tv);
+  if(watchedQ) items=items.filter(e=>(e.title||'').toLowerCase().includes(watchedQ));
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   document.getElementById('watchedCnt').textContent = items.length+' yapım';
   const el = document.getElementById('watchedList');
@@ -1026,6 +1030,7 @@ function renderWatchlist(){
   const f = filters.watchlist;
   if(f==='movie') items = items.filter(e=>!e.tv);
   if(f==='tv')    items = items.filter(e=>!!e.tv);
+  if(watchlistQ) items=items.filter(e=>(e.title||'').toLowerCase().includes(watchlistQ));
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   document.getElementById('watchlistCnt').textContent = items.length+' yapım';
   const el = document.getElementById('watchlistList');
@@ -1062,11 +1067,12 @@ function renderWatchlist(){
 // ════════════════════════════════════════════════════════════════
 function renderSuggestions(){
   const el = document.getElementById('suggestList');
-  if(!suggestions.length){
+  const filteredSugs = suggestQ ? suggestions.filter(s=>(s.title||'').toLowerCase().includes(suggestQ)) : suggestions;
+  if(!filteredSugs.length){
     el.innerHTML = emptyHtml('💡','Henüz öneri yok','Aramadan "Öneri Olarak At" ile gönder');
     return;
   }
-  el.innerHTML = suggestions.map(sug => {
+  el.innerHTML = filteredSugs.map(sug => {
     const poster = sug.poster
       ? `<img class="limg" src="${IMG_BASE}${sug.poster}" loading="lazy" alt=""/>`
       : `<div class="lph">${sug.tv?'📺':'🎬'}</div>`;
@@ -1134,7 +1140,9 @@ function renderMyLog(){
     if(myLogFilter==='tv')    return arr.filter(e=>!!e.tv);
     return arr;
   };
-  const filtered = doFilter(items).sort((a,b)=>(b.loggedAt||0)-(a.loggedAt||0));
+  let filtered = doFilter(items);
+  if(mylogQ) filtered=filtered.filter(e=>(e.title||'').toLowerCase().includes(mylogQ));
+  filtered=filtered.sort((a,b)=>(b.loggedAt||0)-(a.loggedAt||0));
   const el = document.getElementById('mylogList');
   document.getElementById('mylogSub').textContent = filtered.length+' film';
 
@@ -1215,15 +1223,6 @@ function savePersonal(){
 
 
 // ════ DEVAM EDİYORUZ SEKMESİ ════════════════════════════════════
-let ongoingFilter = 'all';
-let ongoingSearchQ = '';
-
-function setOngoingFilter(f,btn){
-  ongoingFilter = f;
-  document.querySelectorAll('#ongoing-all,#ongoing-mine').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  renderOngoing();
-}
 
 function filterOngoing(q){
   ongoingSearchQ = q.toLowerCase().trim();
@@ -1234,7 +1233,6 @@ function renderOngoing(){
   const el = document.getElementById('ongoingList');
   if(!el) return;
   let items = Object.values(sharedLib).filter(e=>e.status==='ongoing');
-  if(ongoingFilter==='mine') items = items.filter(e=>(e.addedBy===user.name)||(e.wantedBy&&e.wantedBy.includes(user.name)));
   if(ongoingSearchQ) items = items.filter(e=>(e.title||'').toLowerCase().includes(ongoingSearchQ));
   items.sort((a,b)=>(b.updatedAt||b.addedAt||0)-(a.updatedAt||a.addedAt||0));
   const sub = document.getElementById('ongoingSub');
@@ -1505,6 +1503,8 @@ function renderPersonal(){
   let items = Object.values(sourceLib);
   if(personalFilter==='movie') items = items.filter(e=>!e.tv);
   if(personalFilter==='tv')    items = items.filter(e=>!!e.tv);
+  if(personalQ) items=items.filter(e=>(e.title||'').toLowerCase().includes(personalQ));
+  if(personalQ) items=items.filter(e=>(e.title||'').toLowerCase().includes(personalQ));
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   document.getElementById('personalSub').textContent = items.length+' içerik';
   const el = document.getElementById('personalList');
@@ -1761,13 +1761,32 @@ async function markWatched(id){
 async function removeShared(id){
   if(!db) return;
   const backup = sharedLib[id] ? Object.assign({}, sharedLib[id]) : null;
+  const prevStatus = backup?.status;
+  // Önce local sharedLib'den sil - anlık render için
+  delete sharedLib[id];
+  // Aktif tab'ı yenile
+  const t = activeTab();
+  if(t==='ongoing') renderOngoing();
+  else if(t==='watched') renderWatched();
+  else if(t==='watchlist') renderWatchlist();
   try{
     await db.ref('sharedLib/'+id).remove();
     showToast('🗑️ Silindi', backup ? async()=>{
+      sharedLib[id] = backup;
       await db.ref('sharedLib/'+id).set(backup);
+      // Geri alınca da render
+      if(activeTab()==='ongoing') renderOngoing();
+      else if(activeTab()==='watched') renderWatched();
+      else if(activeTab()==='watchlist') renderWatchlist();
+      updateCounts();
       showToast('↩ Geri alındı!');
     } : null);
-  } catch(e){ showToast('❌ '+e.message); }
+    updateCounts();
+  } catch(e){
+    // Hata olursa geri al
+    if(backup) sharedLib[id] = backup;
+    showToast('❌ '+e.message);
+  }
 }
 
 async function approveSug(key){
@@ -2069,17 +2088,17 @@ function showToast(msg, undoFn){
     </div>
     <div style="padding:14px 20px 0">
       <div id="epCurrentBadge" style="display:none;background:var(--goldbg);border:1px solid var(--goldbr);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--gold);font-weight:600">
-        📍 En son izlenen: <span id="epCurrentText"></span>
+        📍 Şu an: <span id="epCurrentText"></span>
       </div>
     </div>
     <div id="epLoading" style="padding:32px;text-align:center;color:var(--t3);font-size:13px">
       <div style="font-size:28px;margin-bottom:8px">⏳</div>Sezon bilgisi yükleniyor…
     </div>
     <div id="epSeasonList" style="display:none;overflow-y:auto;padding:12px 20px;flex:1">
-      <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">En son izlediğiniz bölüm hangi sezon?</div>
+      <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Sezon Seç</div>
       <div id="epSeasonBtns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
       <div id="epEpisodeSection" style="display:none">
-        <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">En son izlediğiniz bölüm — <span id="epSeasonLabel"></span></div>
+        <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Bölüm Seç — <span id="epSeasonLabel"></span></div>
         <div id="epEpisodeBtns" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px"></div>
       </div>
     </div>
@@ -2092,3 +2111,4 @@ function showToast(msg, undoFn){
 
 </body>
 </html>
+  <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
