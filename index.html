@@ -194,6 +194,7 @@ img{display:block}
 
 /* ── TOAST ──────────────────────────────────────────────────── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--s2);color:var(--t1);padding:10px 20px;border-radius:24px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.5);z-index:9999;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;border:1px solid var(--s3);white-space:nowrap}
+.toast.undo{white-space:normal;padding:10px 16px}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
@@ -394,13 +395,16 @@ img{display:block}
   <div id="pane-personal" style="display:none" class="wrap">
     <div class="sechdr">
       <div>
-        <div class="sectitle serif">Listem 👤</div>
+        <div class="sectitle serif" id="personalTitle">Listem 👤</div>
         <div class="seccnt" id="personalSub">Kişisel liste</div>
       </div>
       <div class="filter-row">
-        <button class="pill on" onclick="setFilter('personal','all',this)">Hepsi</button>
-        <button class="pill"    onclick="setFilter('personal','movie',this)">Film</button>
-        <button class="pill"    onclick="setFilter('personal','tv',this)">Dizi</button>
+        <button class="pill on" id="plv-me"      onclick="setPersonalView('me',this)">🦊 Benim</button>
+        <button class="pill"    id="plv-partner"  onclick="setPersonalView('partner',this)">🐰 Partner</button>
+        <span style="color:var(--s3);margin:0 2px">|</span>
+        <button class="pill on" id="plf-all"   onclick="setPersonalFilter('all',this)">Hepsi</button>
+        <button class="pill"    id="plf-movie" onclick="setPersonalFilter('movie',this)">Film</button>
+        <button class="pill"    id="plf-tv"    onclick="setPersonalFilter('tv',this)">Dizi</button>
       </div>
     </div>
     <div id="personalList"></div>
@@ -708,6 +712,18 @@ function startApp(){
   setTimeout(fetchMissingPosters, 3000);
   // Yeni sezon kontrolü (45sn sonra)
   setTimeout(checkNewSeasons, 45000);
+  // Kullanıcı pill butonlarını güncelle
+  setTimeout(()=>{
+    const p = partner();
+    const plvMe = document.getElementById('plv-me');
+    const plvPart = document.getElementById('plv-partner');
+    const mlvMe = document.getElementById('mlv-me');
+    const mlvPart = document.getElementById('mlv-partner');
+    if(plvMe) plvMe.textContent = emoji(user.name)+' Benim';
+    if(plvPart) plvPart.textContent = p ? emoji(p.name)+' '+(p.name||'Partner') : '👤 Partner';
+    if(mlvMe) mlvMe.textContent = emoji(user.name)+' Benim';
+    if(mlvPart) mlvPart.textContent = p ? emoji(p.name)+' '+(p.name||'Partner') : '👤 Partner';
+  }, 100);
 }
 
 
@@ -1143,9 +1159,14 @@ function renderMyLog(){
           ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
           ${stars}
           ${dateStr?`<span style="font-size:11px;color:var(--t3)">${dateStr}</span>`:''}
+          ${e.tv && e.myEpisode ? `<span style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbr);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">▶ ${e.myEpisode}</span>` : ''}
+          ${e.tv && e.myStatus==='done' ? `<span style="background:var(--grbg);color:var(--green);border:1px solid var(--grbd);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">✓ Bitti</span>` : ''}
         </div>
         ${e.note?`<div class="lnote">"${e.note}"</div>`:''}
-        <div class="lactions">${isMe?`<button class="btn bred bxs" onclick="removeMyLog('${e.id}')">Kaldır</button>`:''}</div>
+        <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
+          ${isMe && e.tv ? `<button class="btn bgold bxs" onclick="openMyEpModal('${e.id}','${(e.title||'').replace(/'/g,"\\'")}')">📺 Bölüm</button>` : ''}
+          ${isMe ? `<button class="btn bred bxs" onclick="removeMyLog('${e.id}')">Kaldır</button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1168,9 +1189,17 @@ function addToMyLog(item, rating, note){
 
 function removeMyLog(id){
   const log = getMyLog();
+  const backup = log[id] ? Object.assign({}, log[id]) : null;
   delete log[id];
   saveMyLog(log);
   renderMyLog();
+  showToast('🗑️ Silindi', backup ? ()=>{
+    const l2 = getMyLog();
+    l2[id] = backup;
+    saveMyLog(l2);
+    renderMyLog();
+    showToast('↩ Geri alındı!');
+  } : null);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1249,12 +1278,95 @@ let epModalItemId=null, epSelectedSeason=null, epSelectedEpisode=null, epTotalEp
 function closeEpModal(){
   document.getElementById('epModal').style.display='none';
   epModalItemId=epSelectedSeason=epSelectedEpisode=null;
+  epModalMode='shared'; epModalMylogId=null;
+  const doneBtn = document.getElementById('epDoneBtn');
+  if(doneBtn) doneBtn.style.display='none';
+}
+
+
+// ════ KİŞİSEL BÖLÜM TAKİBİ (İzledim tab) ═══════════════════════
+let epModalMode = 'shared'; // 'shared' | 'mylog'
+let epModalMylogId = null;
+
+function openMyEpModal(id, titleArg){
+  const log = getMyLog();
+  const item = log[id];
+  if(!item) return;
+  epModalMode = 'mylog';
+  epModalMylogId = id;
+  // epModal'ı aç - item parametreleriyle
+  epModalItemId = id;
+  epSelectedSeason = null; epSelectedEpisode = null;
+  document.getElementById('epModal').style.display = 'flex';
+  document.getElementById('epTitle').textContent = item.title || titleArg || '—';
+  document.getElementById('epMeta').textContent = (item.year||'') + ' · Dizi · Kişisel Takip';
+  const posterEl = document.getElementById('epPoster');
+  const posterPh = document.getElementById('epPosterPh');
+  if(item.poster){ posterEl.src = IMG_BASE+item.poster; posterEl.style.display='block'; posterPh.style.display='none'; }
+  else { posterEl.style.display='none'; posterPh.style.display='flex'; }
+  const cur = item.myEpisode || '';
+  const curBadge = document.getElementById('epCurrentBadge');
+  if(cur){ curBadge.style.display='block'; document.getElementById('epCurrentText').textContent=cur+(item.myStatus==='done'?' ✓ Bitti':''); }
+  else curBadge.style.display='none';
+  const saveBtn = document.getElementById('epSaveBtn');
+  saveBtn.style.opacity='.5'; saveBtn.style.pointerEvents='none'; saveBtn.textContent='📍 Kaydet';
+  // Modal'a "Bitti" butonu ekle
+  const footerDiv = document.querySelector('#epModal .btn.bghost').parentElement;
+  if(!document.getElementById('epDoneBtn')){
+    const doneBtn = document.createElement('button');
+    doneBtn.id = 'epDoneBtn';
+    doneBtn.className = 'btn bgreen';
+    doneBtn.style.cssText = 'flex:1.5;justify-content:center';
+    doneBtn.textContent = '✓ Bitti';
+    doneBtn.onclick = markMyLogDone;
+    footerDiv.insertBefore(doneBtn, saveBtn);
+  }
+  document.getElementById('epDoneBtn').style.display = 'inline-flex';
+  document.getElementById('epLoading').style.display = 'block';
+  document.getElementById('epSeasonList').style.display = 'none';
+  document.getElementById('epEpisodeSection').style.display = 'none';
+  document.getElementById('epSeasonBtns').innerHTML = '';
+  document.getElementById('epEpisodeBtns').innerHTML = '';
+  const tmdbId = item.tmdbId || id;
+  fetch(`${TMDB_BASE}/tv/${tmdbId}?api_key=${TMDB_KEY}&language=tr-TR`)
+    .then(r=>r.json())
+    .then(data=>{
+      const seasons = (data.seasons||[]).filter(s=>s.season_number>0);
+      document.getElementById('epLoading').style.display='none';
+      document.getElementById('epSeasonList').style.display='block';
+      epTotalEpisodes={};
+      seasons.forEach(s=>{epTotalEpisodes[s.season_number]=s.episode_count;});
+      document.getElementById('epSeasonBtns').innerHTML = seasons.map(s=>
+        `<button class="ep-season-btn" onclick="selectEpSeason(${s.season_number},${s.episode_count},this)">S${s.season_number}<span style="font-size:10px;opacity:.7;display:block">${s.episode_count} bölüm</span></button>`
+      ).join('') || '<div style="color:var(--t3);font-size:13px">Sezon bulunamadı</div>';
+    })
+    .catch(()=>{
+      document.getElementById('epLoading').innerHTML = '<div style="color:var(--rose)">⚠️ Yüklenemedi — Manuel:</div><input id="epManualInput" class="inp" style="width:180px;text-align:center;margin-top:8px" placeholder="S02E05"/>';
+      saveBtn.style.opacity='1'; saveBtn.style.pointerEvents='auto';
+      epSelectedSeason='manual'; epSelectedEpisode='manual';
+    });
+}
+
+function markMyLogDone(){
+  if(!epModalMylogId) return;
+  const log = getMyLog();
+  if(log[epModalMylogId]){
+    log[epModalMylogId].myStatus = 'done';
+    log[epModalMylogId].myEpisode = log[epModalMylogId].myEpisode || '—';
+    saveMyLog(log);
+    renderMyLog();
+  }
+  closeEpModal();
+  showToast('✅ Dizi tamamlandı!');
 }
 
 function openEpisodeModal(id, titleArg){
   const item = sharedLib[id];
   if(!item) return;
+  epModalMode='shared'; epModalMylogId=null;
   epModalItemId=id; epSelectedSeason=null; epSelectedEpisode=null;
+  const doneBtn = document.getElementById('epDoneBtn');
+  if(doneBtn) doneBtn.style.display='none';
   document.getElementById('epModal').style.display='flex';
   document.getElementById('epTitle').textContent=item.title||titleArg||'—';
   document.getElementById('epMeta').textContent=(item.year||'')+(item.tv?' · Dizi':' · Film');
@@ -1340,9 +1452,23 @@ async function saveEpisode(){
     if(!epSelectedEpisode){showToast('⚠️ Bölüm seçin');return;}
     epText=`S${epSelectedSeason}E${epSelectedEpisode}`;
   }
-  if(db){ await db.ref('sharedLib/'+epModalItemId+'/episode').set(epText); await db.ref('sharedLib/'+epModalItemId+'/updatedAt').set(Date.now()); }
-  closeEpModal();
-  showToast(`✅ En son izlenen bölüm: ${epText}`);
+  if(epModalMode === 'mylog'){
+    // Kişisel log'a kaydet
+    const log = getMyLog();
+    if(log[epModalMylogId]){
+      log[epModalMylogId].myEpisode = epText;
+      log[epModalMylogId].myStatus = 'watching';
+      saveMyLog(log);
+      renderMyLog();
+    }
+    closeEpModal();
+    showToast(`📺 ${epText} kaydedildi!`);
+  } else {
+    // Paylaşımlı Devam listesine kaydet
+    if(db){ await db.ref('sharedLib/'+epModalItemId+'/episode').set(epText); await db.ref('sharedLib/'+epModalItemId+'/updatedAt').set(Date.now()); }
+    closeEpModal();
+    showToast(`✅ En son izlenen bölüm: ${epText}`);
+  }
 }
 
 function markOngoingWatched(id){
@@ -1351,39 +1477,81 @@ function markOngoingWatched(id){
   showToast('✅ Tamamlandı olarak işaretlendi!');
 }
 
+let personalView = 'me';
+let personalFilter = 'all';
+
+function setPersonalView(v, btn){
+  personalView = v;
+  const p = partner();
+  document.querySelectorAll('#plv-me,#plv-partner').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const titleEl = document.getElementById('personalTitle');
+  if(v==='me') titleEl.textContent = 'Listem 👤';
+  else titleEl.textContent = (p ? emoji(p.name)+' ' : '') + (p?.name||'Partner') + "'in Listesi";
+  renderPersonal();
+}
+
+function setPersonalFilter(f, btn){
+  personalFilter = f;
+  document.querySelectorAll('#plf-all,#plf-movie,#plf-tv').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderPersonal();
+}
+
 function renderPersonal(){
-  let items = Object.values(personalLib);
-  const f = filters.personal;
-  if(f==='movie') items = items.filter(e=>!e.tv);
-  if(f==='tv')    items = items.filter(e=>!!e.tv);
+  const p = partner();
+  const isMe = personalView==='me';
+  const sourceLib = isMe ? personalLib : partnerPersonal;
+  let items = Object.values(sourceLib);
+  if(personalFilter==='movie') items = items.filter(e=>!e.tv);
+  if(personalFilter==='tv')    items = items.filter(e=>!!e.tv);
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
-  document.getElementById('personalSub').textContent = items.length+' film';
+  document.getElementById('personalSub').textContent = items.length+' içerik';
   const el = document.getElementById('personalList');
-  if(!items.length){ el.innerHTML = emptyHtml('👤','Listeniz boş','Aramadan "👤 Listemde Olsun" ile ekle'); return; }
+  if(!items.length){
+    el.innerHTML = isMe
+      ? emptyHtml('👤','Listeniz boş','Aramadan "👤 Listemde Olsun" ile ekle')
+      : emptyHtml('👤',(p?.name||'Partner')+"'in listesi boş",'');
+    return;
+  }
   el.innerHTML = items.map(e => {
     const poster = e.poster
       ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
       : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const safeId = (e.id||'').replace(/'/g,"\'");
     return `<div class="lrow">
       ${poster}
       <div class="lbody">
-        <div class="ltitle">${e.title}</div>
+        <div class="ltitle">${e.title||'—'}</div>
         <div class="lmeta">
           <span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>
           ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
         </div>
         ${e.note&&e.note!=='Letterboxd watchlist'?`<div class="lnote">"${e.note}"</div>`:''}
         <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
-          <button class="btn bgold bxs" onclick="suggestFromPersonal('${e.id}')">💡 Öner</button>
-          <button class="btn bghost bxs" onclick="addPersonalToShared('${e.id}')">🎬 İzleyeceğiz</button>
-          <button class="btn bred bxs" onclick="removePersonal('${e.id}')">Kaldır</button>
+          ${isMe ? `
+          <button class="btn bgold bxs" onclick="suggestFromPersonal('${safeId}')">💡 Öner</button>
+          <button class="btn bghost bxs" onclick="addPersonalToShared('${safeId}')">🎬 İzleyeceğiz</button>
+          <button class="btn bred bxs" onclick="removePersonal('${safeId}')">Kaldır</button>
+          ` : ''}
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
-function removePersonal(id){ delete personalLib[id]; savePersonal(); renderPersonal(); }
+function removePersonal(id){
+  const backup = personalLib[id] ? Object.assign({}, personalLib[id]) : null;
+  delete personalLib[id];
+  savePersonal();
+  renderPersonal();
+  showToast('🗑️ Silindi', backup ? ()=>{
+    personalLib[id] = backup;
+    savePersonal();
+    renderPersonal();
+    showToast('↩ Geri alındı!');
+  } : null);
+}
 
 function addPersonalToShared(id){
   const e = personalLib[id];
@@ -1872,11 +2040,15 @@ function showToast(msg, undoFn){
   const t = document.getElementById('toast');
   clearTimeout(_toastTimer);
   if(undoFn){
-    t.innerHTML = msg + ' <button onclick="window.__undoFn&&window.__undoFn()" style="margin-left:8px;background:var(--gold);color:#000;border:none;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer">↩ Geri Al</button>';
-    window.__undoFn = ()=>{ undoFn(); t.classList.remove('show'); window.__undoFn=null; };
-    _toastTimer = setTimeout(()=>{ t.classList.remove('show'); window.__undoFn=null; }, 5000);
+    t.innerHTML = msg + ' <button onclick="(window.__undoFn||function(){})();this.closest('div').remove&&0" style="margin-left:8px;background:var(--gold);color:#000;border:none;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle">↩ Geri Al</button>';
+    t.style.pointerEvents = 'auto';
+    t.classList.add('undo');
+    window.__undoFn = ()=>{ undoFn(); t.classList.remove('show','undo'); t.style.pointerEvents='none'; window.__undoFn=null; };
+    _toastTimer = setTimeout(()=>{ t.classList.remove('show','undo'); t.style.pointerEvents='none'; window.__undoFn=null; }, 5000);
   } else {
     t.textContent = msg;
+    t.style.pointerEvents = 'none';
+    t.classList.remove('undo');
     _toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
   }
   t.classList.add('show');
