@@ -281,6 +281,17 @@ img{display:block}
           <span>🐰</span><span>Bun</span>
         </div>
       </div>
+      
+      <div style="position:relative">
+        <button class="hdr-switch" style="padding:5px 8px; font-size:14px" onclick="toggleNotifMenu()">🔔</button>
+        <div id="notifMenu" style="display:none; position:absolute; right:0; top:calc(100% + 10px); background:var(--surface); border:1px solid var(--s3); border-radius:16px; padding:20px; width:340px; box-shadow:0 10px 40px rgba(0,0,0,.8); z-index:200;">
+          <div style="font-size:11px; font-weight:700; color:var(--t3); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px">BİLDİRİMLER</div>
+          <button class="btn bgold" style="width:100%; justify-content:center; margin-bottom:12px; padding:10px" onclick="enableNotifications()">🔔 Bildirimleri Aç</button>
+          <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:12px; padding:10px" onclick="checkNewSeasons(true)">🔄 Şimdi Kontrol Et</button>
+          <div style="font-size:11px; color:var(--t3); line-height:1.5;">İzlediğiniz veya devam eden dizilerde yeni sezon veya bölüm çıkınca bildirim alırsınız. Uygulama açık olduğunda 12 saatte bir kontrol edilir. <br><br>Durum: <strong id="notifStatus" style="color:var(--t1)">Kapalı</strong></div>
+        </div>
+      </div>
+      
       <button class="hdr-switch" onclick="switchUser()">Değiştir</button>
     </div>
   </div>
@@ -350,7 +361,7 @@ img{display:block}
     <div class="sechdr">
       <div>
         <div class="sectitle serif">Öneri Kutusu 💡</div>
-        <div class="seccnt">Birbiriize film/dizi önerin</div>
+        <div class="seccnt">Birbirinize film/dizi önerin</div>
       </div>
     </div>
 
@@ -556,6 +567,16 @@ window.onload = () => {
     return;
   }
   loadAfterPin();
+  
+  // Bildirim panelini dışarıya tıklayınca kapatmak için
+  window.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[onclick="toggleNotifMenu()"]');
+    const menu = e.target.closest('#notifMenu');
+    if(!btn && !menu) {
+      const m = document.getElementById('notifMenu');
+      if(m) m.style.display = 'none';
+    }
+  });
 };
 
 function loadAfterPin(){
@@ -677,13 +698,9 @@ function startApp(){
   db.ref('userLogs/'+user.name).on('value', snap => {
     const fbLog = snap.val() || {};
     if(Object.keys(fbLog).length > 0){
-      // Firebase veriyi localLog ile merge - localLog (yeni eklemeler) öncelikli
       const localLog = lsGet('cm_mylog_'+user.name) || {};
-      // Sadece kendi user adıyla kaydedilmiş veriler
       const merged = Object.assign({}, fbLog, localLog);
       lsSet('cm_mylog_'+user.name, merged);
-    } else {
-      // Firebase boşsa localLog'u kullan
     }
     updateCounts();
     if(activeTab()==='mylog') renderMyLog();
@@ -707,24 +724,23 @@ function startApp(){
 
   // Poster eksikse arka planda çek
   setTimeout(fetchMissingPosters, 3000);
-  // Yeni sezon kontrolü (45sn sonra)
-  setTimeout(checkNewSeasons, 45000);
-  // Kullanıcı pill butonlarını güncelle
+  
+  // Bildirim ve yeni sezon/bölüm kontrolünü 45 saniye sonra başlat
+  setTimeout(()=>checkNewSeasons(false), 45000);
+  
+  // Bildirim panel durumunu güncelle
   setTimeout(()=>{
-    const p = partner();
-    const plvMe = document.getElementById('plv-me');
-    const plvPart = document.getElementById('plv-partner');
-    const mlvMe = document.getElementById('mlv-me');
-    const mlvPart = document.getElementById('mlv-partner');
-    if(plvMe) plvMe.textContent = emoji(user.name)+' Benim';
-    if(plvPart) plvPart.textContent = p ? emoji(p.name)+' '+(p.name||'Partner') : '👤 Partner';
-    if(mlvMe) mlvMe.textContent = emoji(user.name)+' Benim';
-    if(mlvPart) mlvPart.textContent = p ? emoji(p.name)+' '+(p.name||'Partner') : '👤 Partner';
+    const st = document.getElementById('notifStatus');
+    if(st) {
+      if(notifEnabled) st.textContent = 'Aktif (Açık)';
+      else if(Notification.permission === 'granted') st.textContent = 'İzin var, menüden açın';
+      else st.textContent = 'Kapalı';
+    }
   }, 100);
 }
 
 
-// ════ YENİ SEZON BİLDİRİMLERİ ═══════════════════════════════════
+// ════ YENİ SEZON & BÖLÜM BİLDİRİMLERİ ══════════════════════════
 let notifEnabled = lsGet('cm_notif_enabled') || false;
 
 function toggleNotifMenu(){
@@ -736,69 +752,102 @@ async function enableNotifications(){
   if(!('Notification' in window)){ showToast('⚠️ Tarayıcınız bildirimleri desteklemiyor'); return; }
   const perm = await Notification.requestPermission();
   if(perm==='granted'){
-    notifEnabled = true; lsSet('cm_notif_enabled', true);
-    document.getElementById('notifStatus').textContent = '🔔 Aktif';
-    showToast('🔔 Bildirimler açıldı!');
-    checkNewSeasons();
+    notifEnabled = true; 
+    lsSet('cm_notif_enabled', true);
+    document.getElementById('notifStatus').textContent = 'Aktif (Açık)';
+    showToast('🔔 Bildirimler açıldı! Dizileriniz kontrol ediliyor...');
+    checkNewSeasons(true);
   } else {
     showToast('❌ Bildirim izni reddedildi');
   }
 }
 
-function disableNotifications(){
-  notifEnabled = false; lsSet('cm_notif_enabled', false);
-  document.getElementById('notifStatus').textContent = '🔕 Kapalı';
-  showToast('🔕 Bildirimler kapatıldı');
-}
-
-async function checkNewSeasons(){
-  if(!notifEnabled) return;
+async function checkNewSeasons(force = false){
+  if(!notifEnabled && !force) return;
   const lastCheck = lsGet('cm_season_check') || 0;
-  if(Date.now() - lastCheck < 12*60*60*1000) return;
+  // Eğer butona basılmadıysa (force değilse) ve 12 saat geçmediyse çık
+  if(!force && Date.now() - lastCheck < 12*60*60*1000) return;
+
+  // Saati güncelle (12 saat sayacı)
   lsSet('cm_season_check', Date.now());
 
-  // SADECE Devam Ediyoruz listesindeki dizileri kontrol et
-  const tvShows = [];
-  Object.values(sharedLib)
-    .filter(e => e.status==='ongoing' && e.tv && e.id && !e.id.startsWith('lb_'))
-    .forEach(e => {
-      if(!tvShows.find(t=>t.id===e.id))
-        tvShows.push({id:e.id, title:e.title, episode:e.episode||''});
-    });
-  if(!tvShows.length) return;
+  // Kontrol edilecek tüm dizileri bir havuzda topla (ID çakışmasını önlemek için)
+  const showsToCheck = {};
 
-  const knownSeasons = lsGet('cm_known_seasons') || {};
-  const newShows = [];
-  for(const show of tvShows){
-    try{
-      const res = await fetch(`${TMDB_BASE}/tv/${show.id}?api_key=${TMDB_KEY}&language=tr-TR`);
-      const data = await res.json();
-      const seasons = data.number_of_seasons || 0;
-      if(knownSeasons[show.id] && knownSeasons[show.id] < seasons){
-        show.prev = knownSeasons[show.id];
-        show.seasons = seasons;
-        newShows.push(show);
-      }
-      knownSeasons[show.id] = seasons;
-    }catch(e){}
-  }
-  lsSet('cm_known_seasons', knownSeasons);
-  if(!newShows.length) return;
-
-  for(const show of newShows){
-    showToast(`🔔 "${show.title}" yeni sezon: ${show.seasons}!`);
-    if(Notification.permission==='granted'){
-      const n = new Notification('📺 Yeni Sezon!', {
-        body: `"${show.title}" - Sezon ${show.seasons} geldi! ${show.episode?'('+show.episode+')':''}`,
-        icon: '/favicon.ico'
-      });
-      n.onclick = ()=>{ window.focus(); showTab('ongoing',document.getElementById('tab-ongoing')); n.close(); };
+  // 1. Ortak "Devam Ediyoruz" dizileri
+  Object.values(sharedLib).forEach(e => {
+    if(e.status === 'ongoing' && e.tv && e.id && !e.id.startsWith('lb_')) {
+      showsToCheck[e.id] = { id: e.id, title: e.title };
     }
+  });
+
+  // 2. Kişisel "İzledim" -> "Devam Eden" diziler
+  const log = getMyLog();
+  Object.values(log).forEach(e => {
+    if(e.tv && e.myStatus === 'watching' && e.id) {
+      // Letterboxd ID'si ise tmdbId'sini al
+      const tmdbId = e.tmdbId || (e.id.startsWith('lb_') ? null : e.id);
+      if(tmdbId && !showsToCheck[tmdbId]) {
+        showsToCheck[tmdbId] = { id: tmdbId, title: e.title };
+      }
+    }
+  });
+
+  const showIds = Object.keys(showsToCheck);
+  if(showIds.length === 0) {
+    if(force) showToast('Kontrol edilecek "Devam Eden" dizi bulunamadı.');
+    return;
+  }
+
+  // Hafızadaki eski sezon/bölüm bilgileri
+  const knownData = lsGet('cm_known_shows') || {};
+  let updatesFound = 0;
+
+  for(const id of showIds){
+    try {
+      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_KEY}&language=tr-TR`);
+      const data = await res.json();
+
+      const currentSeasons = data.number_of_seasons || 0;
+      const currentEpisodes = data.number_of_episodes || 0;
+      const showTitle = showsToCheck[id].title;
+
+      // Eğer dizi daha önce hiç kontrol edilmediyse, şu anki veriyi kaydet (bildirim atma)
+      if(!knownData[id]) {
+         knownData[id] = { seasons: currentSeasons, episodes: currentEpisodes };
+         continue; 
+      }
+
+      const known = knownData[id];
+      let notifyMsg = null;
+
+      // Önce yeni sezonu kontrol et, yoksa yeni bölümü kontrol et
+      if (currentSeasons > known.seasons) {
+         notifyMsg = `📺 "${showTitle}" için yeni sezon geldi! (Sezon ${currentSeasons})`;
+      } else if (currentEpisodes > known.episodes) {
+         notifyMsg = `📺 "${showTitle}" için yeni bölüm yayınlandı!`;
+      }
+
+      if (notifyMsg) {
+        showToast(`🔔 ${notifyMsg}`);
+        if(Notification.permission === 'granted'){
+          const n = new Notification('Seyir Defteri', { body: notifyMsg, icon: '/favicon.ico' });
+          n.onclick = () => { window.focus(); n.close(); };
+        }
+        updatesFound++;
+      }
+
+      // Veriyi yeni haliyle güncelle
+      knownData[id] = { seasons: currentSeasons, episodes: currentEpisodes };
+
+    } catch(e){}
+  }
+
+  lsSet('cm_known_shows', knownData);
+  if (force && updatesFound === 0) {
+     showToast('Diziler güncel: Yeni bölüm veya sezon yok.');
   }
 }
-
-
-function activeTab(){ return ALL_TABS.find(t=>document.getElementById('tab-'+t)?.classList.contains('on'))||'search'; }
 
 // ════════════════════════════════════════════════════════════════
 // TAB
@@ -972,7 +1021,6 @@ function renderSearchGrid(items){
 // ════════════════════════════════════════════════════════════════
 // RENDER: İZLEDİK
 // ════════════════════════════════════════════════════════════════
-// ════ TAB ARAMA DEĞİŞKENLERİ ═══════════════════════════════════
 function filterWatched(q){ watchedQ=q.toLowerCase().trim(); renderWatched(); }
 function filterWatchlist(q){ watchlistQ=q.toLowerCase().trim(); renderWatchlist(); }
 function filterSuggest(q){ suggestQ=q.toLowerCase().trim(); renderSuggestions(); }
@@ -1220,9 +1268,7 @@ function savePersonal(){
   updateCounts();
 }
 
-
 // ════ DEVAM EDİYORUZ SEKMESİ ════════════════════════════════════
-
 function filterOngoing(q){
   ongoingQ = q.toLowerCase().trim();
   renderOngoing();
@@ -1291,7 +1337,6 @@ function openMyEpModal(id, titleArg){
   if(!item) return;
   epModalMode = 'mylog';
   epModalMylogId = id;
-  // epModal'ı aç - item parametreleriyle
   epModalItemId = id;
   epSelectedSeason = null; epSelectedEpisode = null;
   document.getElementById('epModal').style.display = 'flex';
@@ -1307,7 +1352,6 @@ function openMyEpModal(id, titleArg){
   else curBadge.style.display='none';
   const saveBtn = document.getElementById('epSaveBtn');
   saveBtn.style.opacity='.5'; saveBtn.style.pointerEvents='none'; saveBtn.textContent='📍 Kaydet';
-  // Modal'a "Bitti" butonu ekle
   const footerDiv = document.querySelector('#epModal .btn.bghost').parentElement;
   if(!document.getElementById('epDoneBtn')){
     const doneBtn = document.createElement('button');
@@ -1450,7 +1494,6 @@ async function saveEpisode(){
     epText=`S${epSelectedSeason}E${epSelectedEpisode}`;
   }
   if(epModalMode === 'mylog'){
-    // Kişisel log'a kaydet
     const log = getMyLog();
     if(log[epModalMylogId]){
       log[epModalMylogId].myEpisode = epText;
@@ -1461,7 +1504,6 @@ async function saveEpisode(){
     closeEpModal();
     showToast(`📺 ${epText} kaydedildi!`);
   } else {
-    // Paylaşımlı Devam listesine kaydet
     if(db){ await db.ref('sharedLib/'+epModalItemId+'/episode').set(epText); await db.ref('sharedLib/'+epModalItemId+'/updatedAt').set(Date.now()); }
     closeEpModal();
     showToast(`✅ En son izlenen bölüm: ${epText}`);
