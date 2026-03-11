@@ -411,10 +411,7 @@ img{display:block}
         <div class="seccnt" id="ongoingSub">Birlikte izlediğiniz diziler</div>
       </div>
     </div>
-    <div class="tab-search-bar">
-      <span class="sinp-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
-      <input class="tab-sinp" autocomplete="off" placeholder="Devam listesinde ara…" oninput="filterOngoing(this.value)"/>
-    </div>
+    <div style="position:relative;margin:0 0 12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span><input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="Devam listesinde ara…" oninput="filterOngoing(this.value)"/></div>
     <div id="ongoingList"></div>
   </div>
 
@@ -489,6 +486,7 @@ let searchType  = 'all';
 const filters   = { watched: 'all', watchlist: 'all', personal: 'all' };
 let myLogView   = 'me';
 let myLogFilter = 'all';
+let watchedQ='', watchlistQ='', suggestQ='', mylogQ='', personalQ='', ongoingQ='';
 
 // ════════════════════════════════════════════════════════════════
 // LOCAL STORAGE HELPERS
@@ -975,7 +973,6 @@ function renderSearchGrid(items){
 // RENDER: İZLEDİK
 // ════════════════════════════════════════════════════════════════
 // ════ TAB ARAMA DEĞİŞKENLERİ ═══════════════════════════════════
-let watchedQ='', watchlistQ='', suggestQ='', mylogQ='', personalQ='';
 function filterWatched(q){ watchedQ=q.toLowerCase().trim(); renderWatched(); }
 function filterWatchlist(q){ watchlistQ=q.toLowerCase().trim(); renderWatchlist(); }
 function filterSuggest(q){ suggestQ=q.toLowerCase().trim(); renderSuggestions(); }
@@ -1227,7 +1224,7 @@ function savePersonal(){
 // ════ DEVAM EDİYORUZ SEKMESİ ════════════════════════════════════
 
 function filterOngoing(q){
-  ongoingSearchQ = q.toLowerCase().trim();
+  ongoingQ = q.toLowerCase().trim();
   renderOngoing();
 }
 
@@ -1235,7 +1232,7 @@ function renderOngoing(){
   const el = document.getElementById('ongoingList');
   if(!el) return;
   let items = Object.values(sharedLib).filter(e=>e.status==='ongoing');
-  if(ongoingSearchQ) items = items.filter(e=>(e.title||'').toLowerCase().includes(ongoingSearchQ));
+  if(ongoingQ) items = items.filter(e=>(e.title||'').toLowerCase().includes(ongoingQ));
   items.sort((a,b)=>(b.updatedAt||b.addedAt||0)-(a.updatedAt||a.addedAt||0));
   const sub = document.getElementById('ongoingSub');
   if(sub) sub.textContent = items.length + ' dizi/film';
