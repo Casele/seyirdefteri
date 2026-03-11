@@ -217,7 +217,6 @@ img{display:block}
 </head>
 <body>
 
-<!-- ── PIN SCREEN ──────────────────────────────────────────── -->
 <div id="pinScreen">
   <div class="pin-card">
     <div class="pin-icon">
@@ -235,7 +234,6 @@ img{display:block}
   </div>
 </div>
 
-<!-- ── SETUP SCREEN ─────────────────────────────────────────── -->
 <div id="setupScreen">
   <div class="setup-card">
     <div style="font-size:48px;margin-bottom:12px">🎬</div>
@@ -256,10 +254,8 @@ img{display:block}
   </div>
 </div>
 
-<!-- ── MAIN APP ─────────────────────────────────────────────── -->
 <div id="mainApp">
 
-  <!-- Header -->
   <div class="hdr">
     <div class="hdr-logo">
       <div class="hdr-lmark">
@@ -289,17 +285,16 @@ img{display:block}
     </div>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <button class="tab on" id="tab-search"    onclick="showTab('search',this)">🔍 Ara</button>
     <button class="tab"    id="tab-watched"   onclick="showTab('watched',this)">✓ İzledik <span class="bcount" id="cnt-watched">0</span></button>
     <button class="tab"    id="tab-watchlist" onclick="showTab('watchlist',this)">🎬 İzleyeceğiz <span class="bcount" id="cnt-watchlist">0</span></button>
+    <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
     <button class="tab"    id="tab-suggest"   onclick="showTab('suggest',this)">💡 Öneriler <span class="bcount" id="cnt-suggest">0</span></button>
     <button class="tab"    id="tab-mylog"     onclick="showTab('mylog',this)">📓 İzledim <span class="bcount" id="cnt-mylog">0</span></button>
     <button class="tab"    id="tab-personal"  onclick="showTab('personal',this)">👤 Listem <span class="bcount" id="cnt-personal">0</span></button>
   </div>
 
-  <!-- ── PANE: SEARCH ──────────────────────────────────────── -->
   <div id="pane-search" class="wrap">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
       <div class="sinp-wrap">
@@ -317,7 +312,6 @@ img{display:block}
     <div id="searchGrid" class="sgrid"></div>
   </div>
 
-  <!-- ── PANE: İZLEDİK ─────────────────────────────────────── -->
   <div id="pane-watched" style="display:none" class="wrap">
     <div class="sechdr">
       <div>
@@ -335,7 +329,6 @@ img{display:block}
     <div id="watchedList"></div>
   </div>
 
-  <!-- ── PANE: İZLEYECEĞİZ ─────────────────────────────────── -->
   <div id="pane-watchlist" style="display:none" class="wrap">
     <div class="sechdr">
       <div>
@@ -353,7 +346,6 @@ img{display:block}
     <div id="watchlistList"></div>
   </div>
 
-  <!-- ── PANE: ÖNERİLER ────────────────────────────────────── -->
   <div id="pane-suggest" style="display:none" class="wrap">
     <div class="sechdr">
       <div>
@@ -366,7 +358,6 @@ img{display:block}
     <div id="suggestList"></div>
   </div>
 
-  <!-- ── PANE: İZLEDİM ─────────────────────────────────────── -->
   <div id="pane-mylog" style="display:none" class="wrap">
     <div class="sechdr">
       <div>
@@ -375,11 +366,13 @@ img{display:block}
       </div>
       <div class="filter-row">
         <button class="pill on" id="mlv-me"      onclick="setMyLogView('me',this)">🦊 Benim</button>
-        <button class="pill"    id="mlv-partner"  onclick="setMyLogView('partner',this)">🐰 Partner</button>
+        <button class="pill"    id="mlv-partner" onclick="setMyLogView('partner',this)">🐰 Partner</button>
         <span style="color:var(--s3);margin:0 2px">|</span>
         <button class="pill on" id="mlf-all"   onclick="setMyLogFilter('all',this)">Hepsi</button>
         <button class="pill"    id="mlf-movie" onclick="setMyLogFilter('movie',this)">Film</button>
         <button class="pill"    id="mlf-tv"    onclick="setMyLogFilter('tv',this)">Dizi</button>
+        <button class="pill"    id="mlf-tv-done"     onclick="setMyLogFilter('tv-done',this)">✓ Biten</button>
+        <button class="pill"    id="mlf-tv-watching" onclick="setMyLogFilter('tv-watching',this)">▶ Devam Eden</button>
         <label style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;border:1px solid var(--goldbr);color:var(--gold);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s" onmouseover="this.style.background='var(--goldbg)'" onmouseout="this.style.background='transparent'">
           📥 Letterboxd
           <input type="file" accept=".csv" multiple style="display:none" onchange="importLetterboxdFiles(event)"/>
@@ -391,17 +384,19 @@ img{display:block}
     <div id="mylogList"></div>
   </div>
 
-  <!-- ── PANE: LİSTEM ──────────────────────────────────────── -->
   <div id="pane-personal" style="display:none" class="wrap">
     <div class="sechdr">
       <div>
-        <div class="sectitle serif">Listem 👤</div>
+        <div class="sectitle serif" id="personalTitle">Listem 👤</div>
         <div class="seccnt" id="personalSub">Kişisel liste</div>
       </div>
       <div class="filter-row">
-        <button class="pill on" onclick="setFilter('personal','all',this)">Hepsi</button>
-        <button class="pill"    onclick="setFilter('personal','movie',this)">Film</button>
-        <button class="pill"    onclick="setFilter('personal','tv',this)">Dizi</button>
+        <button class="pill on" id="plv-me" onclick="setPersonalView('me',this)">🦊 Benim</button>
+        <button class="pill" id="plv-partner" onclick="setPersonalView('partner',this)">🐰 Partner</button>
+        <span style="color:var(--s3);margin:0 2px">|</span>
+        <button class="pill on" id="plf-all" onclick="setPersonalFilter('all',this)">Hepsi</button>
+        <button class="pill" id="plf-movie" onclick="setPersonalFilter('movie',this)">Film</button>
+        <button class="pill" id="plf-tv" onclick="setPersonalFilter('tv',this)">Dizi</button>
       </div>
     </div>
 
@@ -409,7 +404,6 @@ img{display:block}
     <div id="personalList"></div>
   </div>
 
-  <!-- ── PANE: DEVAM EDİYORUZ ─────────────────────────── -->
   <div id="pane-ongoing" style="display:none" class="wrap">
     <div class="sechdr">
       <div>
@@ -424,10 +418,7 @@ img{display:block}
     <div id="ongoingList"></div>
   </div>
 
-</div><!-- /mainApp -->
-
-<!-- ── MODAL ────────────────────────────────────────────────── -->
-<div id="modal" onclick="if(event.target===this)closeModal()">
+</div><div id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-box">
     <div class="modal-hdr">
       <div id="mPoster"></div>
@@ -464,7 +455,6 @@ img{display:block}
   </div>
 </div>
 
-<!-- ── TOAST ─────────────────────────────────────────────────── -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -577,11 +567,21 @@ function loadAfterPin(){
 }
 
 function selectUser(name, silent){
+  if(window._switchTimer) clearTimeout(window._switchTimer);
   user = getUser(name);
   lsSet('cm_user', name);
   document.getElementById('pinScreen').style.display  = 'none';
   document.getElementById('setupScreen').style.display = 'none';
   startApp();
+  // Fallback: eğer 5 sn sonra hala bağlı değilse sayfayı yenile
+  if(!silent){
+    window._switchTimer = setTimeout(()=>{
+      const dot = document.getElementById('syncDot');
+      if(dot && dot.style.background !== 'var(--green)'){
+        location.reload();
+      }
+    }, 5000);
+  }
 }
 
 function switchUser(){
@@ -1138,6 +1138,8 @@ function renderMyLog(){
   const doFilter = arr => {
     if(myLogFilter==='movie') return arr.filter(e=>!e.tv);
     if(myLogFilter==='tv')    return arr.filter(e=>!!e.tv);
+    if(myLogFilter==='tv-done') return arr.filter(e=>!!e.tv && e.myStatus === 'done');
+    if(myLogFilter==='tv-watching') return arr.filter(e=>!!e.tv && e.myStatus === 'watching');
     return arr;
   };
   let filtered = doFilter(items);
@@ -1491,8 +1493,8 @@ function setPersonalView(v, btn){
 
 function setPersonalFilter(f, btn){
   personalFilter = f;
-  document.querySelectorAll('#plf-all,#plf-movie,#plf-tv').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
+  document.querySelectorAll('#pane-personal .pill:not(#plv-me):not(#plv-partner)').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
   renderPersonal();
 }
 
@@ -2024,30 +2026,6 @@ function fetchMissingPosters(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// KULLANICI DEĞİŞİMİ - otomatik yenile fallback
-// ════════════════════════════════════════════════════════════════
-// selectUser çağrıldığında eğer Firebase 4 sn içinde veri göndermezse hard reload
-let _switchTimer = null;
-const _origSelectUser = selectUser;
-function selectUser(name, silent){
-  if(_switchTimer) clearTimeout(_switchTimer);
-  user = getUser(name);
-  lsSet('cm_user', name);
-  document.getElementById('pinScreen').style.display  = 'none';
-  document.getElementById('setupScreen').style.display = 'none';
-  startApp();
-  // Fallback: eğer 5 sn sonra hala bağlı değilse sayfayı yenile
-  if(!silent){
-    _switchTimer = setTimeout(()=>{
-      const dot = document.getElementById('syncDot');
-      if(dot && dot.style.background !== 'var(--green)'){
-        location.reload();
-      }
-    }, 5000);
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
 // YARDIMCILAR
 // ════════════════════════════════════════════════════════════════
 function emptyHtml(ico, txt, sub){
@@ -2074,7 +2052,6 @@ function showToast(msg, undoFn){
 }
 </script>
 
-<!-- ══ BÖLÜM SEÇİM MODALI ═══════════════════════════════ -->
 <div id="epModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);align-items:center;justify-content:center">
   <div style="background:var(--surface);border-radius:18px;width:min(420px,92vw);max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.6)">
     <div style="padding:20px 20px 0;display:flex;align-items:flex-start;gap:14px">
@@ -2111,4 +2088,3 @@ function showToast(msg, undoFn){
 
 </body>
 </html>
-  <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
