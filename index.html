@@ -307,10 +307,10 @@ img{display:block}
     <button class="tab on" id="tab-search"    onclick="showTab('search',this)">🔍 Ara</button>
     <button class="tab"    id="tab-watched"   onclick="showTab('watched',this)">✓ İzledik <span class="bcount" id="cnt-watched">0</span></button>
     <button class="tab"    id="tab-watchlist" onclick="showTab('watchlist',this)">🎬 İzleyeceğiz <span class="bcount" id="cnt-watchlist">0</span></button>
+    <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
     <button class="tab"    id="tab-suggest"   onclick="showTab('suggest',this)">💡 Öneriler <span class="bcount" id="cnt-suggest">0</span></button>
     <button class="tab"    id="tab-mylog"     onclick="showTab('mylog',this)">📓 İzledim <span class="bcount" id="cnt-mylog">0</span></button>
     <button class="tab"    id="tab-personal"  onclick="showTab('personal',this)">👤 Listem <span class="bcount" id="cnt-personal">0</span></button>
-  <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
   </div>
 
   <!-- ── PANE: SEARCH ──────────────────────────────────────── -->
@@ -621,7 +621,7 @@ function switchUser(){
   location.reload();
 }
 
-const ALL_TABS = ['search','watched','watchlist','suggest','mylog','personal'];
+const ALL_TABS = ['search','watched','watchlist','ongoing','suggest','mylog','personal'];
 
 // ════════════════════════════════════════════════════════════════
 // START APP
@@ -717,6 +717,7 @@ function showTab(name, btn){
   if(name==='suggest')   renderSuggestions();
   if(name==='mylog')     renderMyLog();
   if(name==='personal')  renderPersonal();
+  if(name==='ongoing')   renderOngoing();
 }
 
 function rerenderActive(){
@@ -821,12 +822,14 @@ function renderSearchGrid(items){
     const titleNorm = (item.title||item.name||'').toLowerCase();
     const pKey = posterCacheKey(item.title||item.name, yr);
 
-    // Benim logumda mı?
-    const myWatched = myLog[id] || Object.values(myLog).find(e=>
-      e.title?.toLowerCase()===titleNorm && e.year===yr);
+    // Benim logumda mı? (id veya tmdbId veya başlık+yıl ile eşleş)
+    const myWatched = myLog[id] ||
+      Object.values(myLog).find(e=> String(e.tmdbId)===id) ||
+      Object.values(myLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr);
     // Partner'ın logunda mı?
-    const pWatched  = partnerLog[id] || Object.values(partnerLog).find(e=>
-      e.title?.toLowerCase()===titleNorm && e.year===yr);
+    const pWatched  = partnerLog[id] ||
+      Object.values(partnerLog).find(e=> String(e.tmdbId)===id) ||
+      Object.values(partnerLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr);
     // Benim listemde mi?
     const myPersonal = personalLib[id] || Object.values(personalLib).find(e=>
       e.title?.toLowerCase()===titleNorm && e.year===yr);
@@ -1007,18 +1010,20 @@ function getMyLog(){ return lsGet('cm_mylog_'+(user?.name||'')) || {}; }
 function saveMyLog(data){
   lsSet('cm_mylog_'+user.name, data);
   if(db && user){
-    // Büyük veri için chunk'a böl (Firebase 10MB limit)
     const entries = Object.entries(data);
-    if(entries.length <= 100){
+    const CHUNK = 150;
+    if(entries.length <= CHUNK){
       db.ref('userLogs/'+user.name).set(data).catch(()=>{});
     } else {
-      // İlk 100'ü hemen yaz, geri kalanları arka planda
-      const chunk1 = Object.fromEntries(entries.slice(0, 100));
-      db.ref('userLogs/'+user.name).set(chunk1).catch(()=>{});
-      // Sonra tamamını yaz
-      setTimeout(()=>{
-        db.ref('userLogs/'+user.name).set(data).catch(()=>{});
-      }, 2000);
+      // Büyük veri: önce sil, sonra chunk'larla update yaz
+      db.ref('userLogs/'+user.name).remove().then(()=>{
+        let delay = 0;
+        for(let i=0; i<entries.length; i+=CHUNK){
+          const chunk = Object.fromEntries(entries.slice(i, i+CHUNK));
+          setTimeout(()=> db.ref('userLogs/'+user.name).update(chunk).catch(()=>{}), delay);
+          delay += 600;
+        }
+      }).catch(()=> db.ref('userLogs/'+user.name).set(data).catch(()=>{}));
     }
   }
   updateCounts();
@@ -1206,8 +1211,9 @@ function renderPersonal(){
           ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
         </div>
         ${e.note&&e.note!=='Letterboxd watchlist'?`<div class="lnote">"${e.note}"</div>`:''}
-        <div class="lactions">
+        <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
           <button class="btn bgold bxs" onclick="suggestFromPersonal('${e.id}')">💡 Öner</button>
+          <button class="btn bghost bxs" onclick="addPersonalToShared('${e.id}')">🎬 İzleyeceğiz</button>
           <button class="btn bred bxs" onclick="removePersonal('${e.id}')">Kaldır</button>
         </div>
       </div>
@@ -1222,6 +1228,18 @@ function removePersonal(id){
     personalLib[id] = backup; savePersonal(); renderPersonal(); showToast('↩ Geri alındı!');
   } : null);
 }
+
+function addPersonalToShared(id){
+  const e = personalLib[id];
+  if(!e || !db){ showToast('❌ Firebase bağlantısı yok'); return; }
+  const sharedId = e.tmdbId || id;
+  db.ref('sharedLib/'+sharedId).set(Object.assign({}, e, {
+    id: sharedId, status:'watchlist', addedBy:user.name, addedAt:Date.now(),
+    ratings:{}, notes:{}, wantedBy:[user.name]
+  })).then(()=> showToast('🎬 İzleyeceğiz listesine eklendi!'))
+     .catch(err=>showToast('❌ '+err.message));
+}
+
 function suggestFromPersonal(id){
   const e = personalLib[id];
   if(!e || !db){ showToast('❌ Firebase bağlantısı yok'); return; }
@@ -1555,16 +1573,27 @@ async function importSingleCSV(file){
     }
     saveMyLog(log);
     renderMyLog();
-    showToast(`✅ ${count} film eklendi! Partner için senkronize ediliyor…`);
-    // Partner'ın görmesi için Firebase'e tam veri yaz
-    if(db && user){
-      setTimeout(()=>{
-        db.ref('userLogs/'+user.name).set(log)
-          .then(()=>showToast('✅ Senkronize edildi! Partner artık görebilir.'))
-          .catch(e=>showToast('⚠️ Sync hatası: '+e.message));
-      }, 1000);
-    }
+    showToast(`✅ ${count} film eklendi! Firebase'e yazılıyor…`);
     fetchPostersForLog(toFetch.slice(0,150));
+    // saveMyLog zaten chunk sistemiyle Firebase'e yazıyor
+    // Ek kontrol: 5sn sonra tamamının yazıldığını doğrula
+    if(db && user){
+      setTimeout(async()=>{
+        try{
+          const snap = await db.ref('userLogs/'+user.name).once('value');
+          const fbCount = Object.keys(snap.val()||{}).length;
+          const localCount = Object.keys(log).length;
+          if(fbCount < localCount){
+            showToast(`🔄 Eksik sync (${fbCount}/${localCount}), tekrar deneniyor…`);
+            db.ref('userLogs/'+user.name).set(log)
+              .then(()=>showToast('✅ Senkronize tamam! Partner görebilir.'))
+              .catch(()=>{});
+          } else {
+            showToast(`✅ ${fbCount} film Firebase'de! Partner görebilir.`);
+          }
+        }catch(e){}
+      }, 8000);
+    }
 
   } else if(fn.includes('ratings')){
     // ratings.csv → Mevcut logdaki puanları güncelle
@@ -1606,21 +1635,31 @@ async function importSingleCSV(file){
 // POSTER ÇEKME (TMDB + Cache)
 // ════════════════════════════════════════════════════════════════
 async function tmdbFindPoster(title, year){
-  // Önce cache'e bak
+  const r = await tmdbFindPosterWithId(title, year);
+  return r ? r.poster : null;
+}
+
+async function tmdbFindPosterWithId(title, year){
   const pk = posterCacheKey(title, year);
   const cached = getCachedPoster(pk);
-  if(cached) return cached;
-  // API'den çek
+  if(cached) return {poster: cached, tmdbId: null};
   try {
     const q = encodeURIComponent(title);
+    // Önce Türkçe ara
     const res = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=tr-TR`);
     const data = await res.json();
-    const results = (data.results||[]).filter(r=>r.poster_path);
+    let results = (data.results||[]).filter(r=>r.poster_path&&(r.media_type==='movie'||r.media_type==='tv'));
+    if(!results.length){
+      // Bulunamazsa İngilizce dene
+      const res2 = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=en-US`);
+      const data2 = await res2.json();
+      results = (data2.results||[]).filter(r=>r.poster_path&&(r.media_type==='movie'||r.media_type==='tv'));
+    }
     if(!results.length) return null;
     const exact = results.find(r=>(r.release_date||r.first_air_date||'').startsWith(year));
-    const poster = (exact||results[0]).poster_path;
-    cachePoster(pk, poster); // Cache'e kaydet!
-    return poster;
+    const hit = exact||results[0];
+    cachePoster(pk, hit.poster_path);
+    return {poster: hit.poster_path, tmdbId: hit.id, tmdbTitle: hit.title||hit.name};
   } catch(e){ return null; }
 }
 
@@ -1631,8 +1670,16 @@ async function fetchPostersForLog(ids){
   for(let i=0;i<ids.length;i++){
     const id=ids[i]; const e=log[id];
     if(!e||e.poster) continue;
-    const p = await tmdbFindPoster(e.title, e.year);
-    if(p){ log[id]=Object.assign({},e,{poster:p}); updated++; }
+    const pResult = await tmdbFindPosterWithId(e.title, e.year);
+    if(pResult){
+      const updates = {poster: pResult.poster};
+      // TMDB gerçek id'sini kaydet - TR/EN başlık eşleşmesi için
+      if(pResult.tmdbId && id.startsWith('lb_')){
+        updates.tmdbId = String(pResult.tmdbId);
+        updates.tmdbTitle = pResult.tmdbTitle || e.title;
+      }
+      log[id]=Object.assign({},e,updates); updated++;
+    }
     if(i%5===4||i===ids.length-1){
       saveMyLog(log);
       if(activeTab()==='mylog') renderMyLog();
