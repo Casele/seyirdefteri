@@ -513,7 +513,7 @@ function partner(){ return USERS.find(u => u.name !== (user?.name)); }
 function checkPin(){
   const val = document.getElementById('pinInput').value.trim();
   if(!val) return;
-  if(val === ACCESS_PIN){
+  if(val === String(ACCESS_PIN).trim()){
     lsSet('cm_pin_ok', true);
     document.getElementById('pinScreen').style.display = 'none';
     loadAfterPin();
