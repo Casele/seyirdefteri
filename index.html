@@ -296,7 +296,7 @@ img{display:block}
   <button class="btn bgold" style="width:100%;justify-content:center;margin-bottom:8px" onclick="enableNotifications();document.getElementById('notifMenu').style.display='none'">
     🔔 Yeni Sezon Bildirimleri
   </button>
-  <div style="font-size:11px;color:var(--t3);line-height:1.5">İzlediğiniz dizilerde yeni sezon çıkınca bildirim alırsınız. Uygulama açık olduğunda 12 saatte bir kontrol edilir.</div>
+  <div style="font-size:11px;color:var(--t3);line-height:1.5">▶ Devam Ediyoruz listenizdeki dizilerde yeni sezon çıkınca bildirim alırsınız. 12 saatte bir kontrol edilir.</div>
 </div>
 <button class="hdr-switch" onclick="switchUser()">Değiştir</button>
     </div>
@@ -828,12 +828,16 @@ function renderSearchGrid(items){
       Object.values(myLog).find(e=> String(e.tmdbId)===id) ||
       Object.values(myLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr) ||
       Object.values(myLog).find(e=> normT(e.title)===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.altTitle||'')===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.origTitle||'')===normT(item.original_title||item.original_name||'') && e.year===yr) ||
       Object.values(myLog).find(e=> normT(e.title)===normT(item.title||item.name));
     // Partner'ın logunda mı?
     const pWatched  = partnerLog[id] ||
       Object.values(partnerLog).find(e=> String(e.tmdbId)===id) ||
       Object.values(partnerLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr) ||
       Object.values(partnerLog).find(e=> normT(e.title)===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.altTitle||'')===normT(item.title||item.name) && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.origTitle||'')===normT(item.original_title||item.original_name||'') && e.year===yr) ||
       Object.values(partnerLog).find(e=> normT(e.title)===normT(item.title||item.name));
     // Benim listemde mi?
     const myPersonal = personalLib[id] || Object.values(personalLib).find(e=>
@@ -1141,25 +1145,28 @@ function renderOngoing(){
   el.innerHTML = items.map(item=>{
     const yr = item.year||'';
     const poster = item.poster
-      ? `<img class="cimg" src="${IMG_BASE}${item.poster}" loading="lazy" style="border-radius:10px 0 0 10px"/>`
-      : `<div class="cph" style="border-radius:10px 0 0 10px">${item.tv?'📺':'🎬'}</div>`;
+      ? `<img class="limg" src="${IMG_BASE}${item.poster}" loading="lazy"/>`
+      : `<div class="lph">${item.tv?'📺':'🎬'}</div>`;
     const ratingFox = item.ratings?.Fox ? `🦊 ${'★'.repeat(Math.round(item.ratings.Fox))}` : '';
     const ratingBun = item.ratings?.Bun ? `🐰 ${'★'.repeat(Math.round(item.ratings.Bun))}` : '';
-    const ep = item.episode ? `<span style="color:var(--gold);font-size:12px">▶ ${item.episode}</span>` : '';
-    return `<div class="litem">
+    const epBadge = item.episode
+      ? `<span style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbr);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">▶ ${item.episode}</span>`
+      : `<span style="color:var(--t3);font-size:11px">Bölüm girilmedi</span>`;
+    const safeTitle = (item.title||'').replace(/'/g,"\'").replace(/"/g,'&quot;');
+    return `<div class="lrow">
       ${poster}
       <div class="lbody">
         <div class="ltitle">${item.title||'—'}</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+        <div class="lmeta">
           <span class="chip ${item.tv?'ctv':'cmovie'}">${item.tv?'Dizi':'Film'}</span>
           ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
-          ${ep}
+          ${epBadge}
         </div>
-        ${ratingFox||ratingBun ? `<div style="font-size:11px;color:var(--gold);margin-bottom:6px">${ratingFox} ${ratingBun}</div>` : ''}
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn bgold bxs" onclick="openEpisodeModal('${item.id}','${(item.title||'').replace(/'/g,'&apos;')}')" style="font-size:12px;padding:5px 10px">📍 Bölüm Güncelle</button>
-          <button class="btn bgreen bxs" onclick="markOngoingWatched('${item.id}')" style="font-size:12px;padding:5px 10px">✓ Tamamlandı</button>
-          <button class="btn bghost bxs" onclick="removeShared('${item.id}')" style="font-size:12px;padding:5px 10px">Kaldır</button>
+        ${ratingFox||ratingBun ? `<div style="font-size:11px;color:var(--gold);margin:4px 0">${ratingFox} ${ratingBun}</div>` : ''}
+        <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
+          <button class="btn bgold bxs" onclick="openEpisodeModal('${item.id}','${safeTitle}')">📍 Bölüm</button>
+          <button class="btn bgreen bxs" onclick="markOngoingWatched('${item.id}')">✓ Bitti</button>
+          <button class="btn bghost bxs" onclick="removeShared('${item.id}')">Kaldır</button>
         </div>
       </div>
     </div>`;
@@ -1650,21 +1657,27 @@ async function tmdbFindPosterWithId(title, year){
   if(cached) return {poster: cached, tmdbId: null};
   try {
     const q = encodeURIComponent(title);
-    // Önce Türkçe ara
-    const res = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=tr-TR`);
-    const data = await res.json();
-    let results = (data.results||[]).filter(r=>r.poster_path&&(r.media_type==='movie'||r.media_type==='tv'));
-    if(!results.length){
-      // Bulunamazsa İngilizce dene
-      const res2 = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=en-US`);
-      const data2 = await res2.json();
-      results = (data2.results||[]).filter(r=>r.poster_path&&(r.media_type==='movie'||r.media_type==='tv'));
-    }
-    if(!results.length) return null;
-    const exact = results.find(r=>(r.release_date||r.first_air_date||'').startsWith(year));
-    const hit = exact||results[0];
+    // TR + EN'de ara
+    const [resTR, resEN] = await Promise.all([
+      fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=tr-TR`).then(r=>r.json()),
+      fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=en-US`).then(r=>r.json()),
+    ]);
+    const fromTR = (resTR.results||[]).filter(r=>r.poster_path&&(r.media_type==='movie'||r.media_type==='tv'));
+    const fromEN = (resEN.results||[]).filter(r=>r.poster_path&&(r.media_type==='movie'||r.media_type==='tv'));
+    const allResults = [...fromTR];
+    for(const r of fromEN){ if(!allResults.find(x=>x.id===r.id)) allResults.push(r); }
+    if(!allResults.length) return null;
+    const exact = allResults.find(r=>(r.release_date||r.first_air_date||'').startsWith(year));
+    const hit = exact||allResults[0];
     cachePoster(pk, hit.poster_path);
-    return {poster: hit.poster_path, tmdbId: hit.id, tmdbTitle: hit.title||hit.name};
+    // TR ve EN başlıklarını cacheKey olarak da kaydet (çapraz eşleşme)
+    if(hit.title&&hit.name) cachePoster(posterCacheKey(hit.name, year), hit.poster_path);
+    return {
+      poster: hit.poster_path,
+      tmdbId: hit.id,
+      tmdbTitle: hit.title||hit.name,
+      originalTitle: hit.original_title||hit.original_name||''
+    };
   } catch(e){ return null; }
 }
 
@@ -1678,10 +1691,14 @@ async function fetchPostersForLog(ids){
     const pResult = await tmdbFindPosterWithId(e.title, e.year);
     if(pResult){
       const updates = {poster: pResult.poster};
-      // TMDB gerçek id'sini kaydet - TR/EN başlık eşleşmesi için
       if(pResult.tmdbId && id.startsWith('lb_')){
-        updates.tmdbId = String(pResult.tmdbId);
-        updates.tmdbTitle = pResult.tmdbTitle || e.title;
+        updates.tmdbId   = String(pResult.tmdbId);
+        updates.tmdbTitle  = pResult.tmdbTitle || e.title;
+        updates.origTitle  = pResult.originalTitle || '';
+        // Türkçe başlık farklıysa kaydet
+        if(pResult.tmdbTitle && pResult.tmdbTitle.toLowerCase() !== e.title.toLowerCase()){
+          updates.altTitle = pResult.tmdbTitle;
+        }
       }
       log[id]=Object.assign({},e,updates); updated++;
     }
@@ -1765,21 +1782,18 @@ async function requestNotifPermission(){
 
 async function checkNewSeasons(){
   if(!('Notification' in window)) return;
-  // Son kontrol 12 saatten yeni ise atla
   const lastCheck = lsGet('cm_season_check') || 0;
   if(Date.now() - lastCheck < 12*60*60*1000) return;
   lsSet('cm_season_check', Date.now());
 
-  // Tüm izlenen dizileri topla (sharedLib + myLog)
+  // SADECE "Devam Ediyoruz" listesindeki dizileri kontrol et
   const tvShows = [];
-  // sharedLib'den diziler
-  Object.values(sharedLib).filter(e=>e.tv && e.id && !e.id.startsWith('lb_')).forEach(e=>{
-    if(!tvShows.find(t=>t.id===e.id)) tvShows.push({id:e.id, title:e.title});
-  });
-  // myLog'dan diziler  
-  Object.values(getMyLog()).filter(e=>e.tv && e.id && !e.id.startsWith('lb_')).forEach(e=>{
-    if(!tvShows.find(t=>t.id===e.id)) tvShows.push({id:e.id, title:e.title});
-  });
+  Object.values(sharedLib)
+    .filter(e => e.status==='ongoing' && e.tv && e.id && !e.id.startsWith('lb_'))
+    .forEach(e => {
+      if(!tvShows.find(t=>t.id===e.id))
+        tvShows.push({id:e.id, title:e.title, episode:e.episode||''});
+    });
 
   if(!tvShows.length) return;
   const knownSeasons = lsGet('cm_known_seasons') || {};
@@ -1813,11 +1827,11 @@ async function checkNewSeasons(){
     if(perm){
       newShows.forEach(show=>{
         const n = new Notification('🎬 Yeni Sezon! ' + show.title, {
-          body: `Sezon ${show.prev} → ${show.seasons} — Seyir Defteri'nde var!`,
+          body: `Sezon ${show.prev} → ${show.seasons} yeni sezon! ${show.episode ? '(Kaldığın yer: '+show.episode+')' : ''}`,
           icon: show.poster ? `${IMG_BASE}${show.poster}` : '/favicon.ico',
           tag: 'new-season-'+show.title,
         });
-        n.onclick = ()=>{ window.focus(); showTab('watched',document.getElementById('tab-watched')); n.close(); };
+        n.onclick = ()=>{ window.focus(); showTab('ongoing',document.getElementById('tab-ongoing')); n.close(); };
       });
     }
     // Uygulama içi bildirim de göster
@@ -1841,7 +1855,7 @@ function showSeasonAlert(shows){
       <span style="color:var(--t3)">Sezon ${s.prev} → <span style="color:var(--green);font-weight:700">${s.seasons}</span></span>
     </div>`).join('')}
     <div style="margin-top:10px;display:flex;gap:8px">
-      <button class="btn bgold bxs" style="flex:1;justify-content:center" onclick="showTab('watched',document.getElementById('tab-watched'));this.closest('#seasonAlert').remove()">İzlediklere Git</button>
+      <button class="btn bgold bxs" style="flex:1;justify-content:center" onclick="showTab('ongoing',document.getElementById('tab-ongoing'));this.closest('#seasonAlert').remove()">▶ Devam Listesine Git</button>
     </div>`;
   document.body.appendChild(div);
 }
