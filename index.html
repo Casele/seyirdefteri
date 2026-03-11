@@ -829,30 +829,24 @@ function renderSearchGrid(items){
     const myWatched = myLog[id] ||
       Object.values(myLog).find(e=> String(e.tmdbId)===id) ||
       Object.values(myLog).find(e=> normT(e.title)===itemTitle && e.year===yr) ||
-      Object.values(myLog).find(e=> normT(e.title)===itemOrigTitle && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.title)===itemOrigTitle && yr && e.year===yr) ||
       Object.values(myLog).find(e=> normT(e.altTitle||'')===itemTitle && e.year===yr) ||
-      Object.values(myLog).find(e=> normT(e.origTitle||'')===itemOrigTitle && e.year===yr) ||
-      Object.values(myLog).find(e=> normT(e.title)===itemTitle) ||
-      Object.values(myLog).find(e=> normT(e.title)===itemOrigTitle);
+      Object.values(myLog).find(e=> normT(e.origTitle||'')===itemOrigTitle && yr && e.year===yr);
     // Partner'ın logunda mı?
     const pWatched  = partnerLog[id] ||
       Object.values(partnerLog).find(e=> String(e.tmdbId)===id) ||
       Object.values(partnerLog).find(e=> normT(e.title)===itemTitle && e.year===yr) ||
-      Object.values(partnerLog).find(e=> normT(e.title)===itemOrigTitle && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.title)===itemOrigTitle && yr && e.year===yr) ||
       Object.values(partnerLog).find(e=> normT(e.altTitle||'')===itemTitle && e.year===yr) ||
-      Object.values(partnerLog).find(e=> normT(e.origTitle||'')===itemOrigTitle && e.year===yr) ||
-      Object.values(partnerLog).find(e=> normT(e.title)===itemTitle) ||
-      Object.values(partnerLog).find(e=> normT(e.title)===itemOrigTitle);
+      Object.values(partnerLog).find(e=> normT(e.origTitle||'')===itemOrigTitle && yr && e.year===yr);
     // Benim listemde mi?
     const myPersonal = personalLib[id] ||
       Object.values(personalLib).find(e=> normT(e.title)===itemTitle && e.year===yr) ||
-      Object.values(personalLib).find(e=> normT(e.title)===itemOrigTitle && e.year===yr) ||
-      Object.values(personalLib).find(e=> normT(e.title)===itemTitle);
+      Object.values(personalLib).find(e=> normT(e.title)===itemOrigTitle && yr && e.year===yr);
     // Partner'ın personal listesinde mi? (Firebase'den)
     const pPersonal = p ? (partnerPersonal[id] ||
       Object.values(partnerPersonal).find(e=> normT(e.title)===itemTitle && e.year===yr) ||
-      Object.values(partnerPersonal).find(e=> normT(e.title)===itemOrigTitle && e.year===yr) ||
-      Object.values(partnerPersonal).find(e=> normT(e.title)===itemTitle)) : null;
+      Object.values(partnerPersonal).find(e=> normT(e.title)===itemOrigTitle && yr && e.year===yr)) : null;
 
     let uicons = '';
     if(myWatched)   uicons += `<span class="uicon" title="${user.name} izledi">${emoji(user.name)}👀</span>`;
