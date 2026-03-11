@@ -822,29 +822,37 @@ function renderSearchGrid(items){
     const titleNorm = (item.title||item.name||'').toLowerCase();
     const pKey = posterCacheKey(item.title||item.name, yr);
 
-    // Benim logumda mı? (id, tmdbId, başlık+yıl, ya da sadece başlık ile)
+    // Benim logumda mı? - çok katmanlı eşleşme
     const normT = t => (t||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const itemOrigTitle = normT(item.original_title||item.original_name||'');
+    const itemTitle     = normT(item.title||item.name||'');
     const myWatched = myLog[id] ||
       Object.values(myLog).find(e=> String(e.tmdbId)===id) ||
-      Object.values(myLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr) ||
-      Object.values(myLog).find(e=> normT(e.title)===normT(item.title||item.name) && e.year===yr) ||
-      Object.values(myLog).find(e=> normT(e.altTitle||'')===normT(item.title||item.name) && e.year===yr) ||
-      Object.values(myLog).find(e=> normT(e.origTitle||'')===normT(item.original_title||item.original_name||'') && e.year===yr) ||
-      Object.values(myLog).find(e=> normT(e.title)===normT(item.title||item.name));
+      Object.values(myLog).find(e=> normT(e.title)===itemTitle && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.title)===itemOrigTitle && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.altTitle||'')===itemTitle && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.origTitle||'')===itemOrigTitle && e.year===yr) ||
+      Object.values(myLog).find(e=> normT(e.title)===itemTitle) ||
+      Object.values(myLog).find(e=> normT(e.title)===itemOrigTitle);
     // Partner'ın logunda mı?
     const pWatched  = partnerLog[id] ||
       Object.values(partnerLog).find(e=> String(e.tmdbId)===id) ||
-      Object.values(partnerLog).find(e=> e.title?.toLowerCase()===titleNorm && e.year===yr) ||
-      Object.values(partnerLog).find(e=> normT(e.title)===normT(item.title||item.name) && e.year===yr) ||
-      Object.values(partnerLog).find(e=> normT(e.altTitle||'')===normT(item.title||item.name) && e.year===yr) ||
-      Object.values(partnerLog).find(e=> normT(e.origTitle||'')===normT(item.original_title||item.original_name||'') && e.year===yr) ||
-      Object.values(partnerLog).find(e=> normT(e.title)===normT(item.title||item.name));
+      Object.values(partnerLog).find(e=> normT(e.title)===itemTitle && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.title)===itemOrigTitle && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.altTitle||'')===itemTitle && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.origTitle||'')===itemOrigTitle && e.year===yr) ||
+      Object.values(partnerLog).find(e=> normT(e.title)===itemTitle) ||
+      Object.values(partnerLog).find(e=> normT(e.title)===itemOrigTitle);
     // Benim listemde mi?
-    const myPersonal = personalLib[id] || Object.values(personalLib).find(e=>
-      e.title?.toLowerCase()===titleNorm && e.year===yr);
+    const myPersonal = personalLib[id] ||
+      Object.values(personalLib).find(e=> normT(e.title)===itemTitle && e.year===yr) ||
+      Object.values(personalLib).find(e=> normT(e.title)===itemOrigTitle && e.year===yr) ||
+      Object.values(personalLib).find(e=> normT(e.title)===itemTitle);
     // Partner'ın personal listesinde mi? (Firebase'den)
-    const pPersonal = p ? (partnerPersonal[id] || Object.values(partnerPersonal).find(e=>
-      e.title?.toLowerCase()===titleNorm && e.year===yr)) : null;
+    const pPersonal = p ? (partnerPersonal[id] ||
+      Object.values(partnerPersonal).find(e=> normT(e.title)===itemTitle && e.year===yr) ||
+      Object.values(partnerPersonal).find(e=> normT(e.title)===itemOrigTitle && e.year===yr) ||
+      Object.values(partnerPersonal).find(e=> normT(e.title)===itemTitle)) : null;
 
     let uicons = '';
     if(myWatched)   uicons += `<span class="uicon" title="${user.name} izledi">${emoji(user.name)}👀</span>`;
@@ -1019,21 +1027,11 @@ function getMyLog(){ return lsGet('cm_mylog_'+(user?.name||'')) || {}; }
 function saveMyLog(data){
   lsSet('cm_mylog_'+user.name, data);
   if(db && user){
-    const entries = Object.entries(data);
-    const CHUNK = 150;
-    if(entries.length <= CHUNK){
-      db.ref('userLogs/'+user.name).set(data).catch(()=>{});
-    } else {
-      // Büyük veri: önce sil, sonra chunk'larla update yaz
-      db.ref('userLogs/'+user.name).remove().then(()=>{
-        let delay = 0;
-        for(let i=0; i<entries.length; i+=CHUNK){
-          const chunk = Object.fromEntries(entries.slice(i, i+CHUNK));
-          setTimeout(()=> db.ref('userLogs/'+user.name).update(chunk).catch(()=>{}), delay);
-          delay += 600;
-        }
-      }).catch(()=> db.ref('userLogs/'+user.name).set(data).catch(()=>{}));
-    }
+    // Firebase'e direkt set - tüm veriyi tek seferde yaz
+    // (600 film ≈ 300KB, Firebase 10MB limitinin çok altında)
+    db.ref('userLogs/'+user.name).set(data).catch(e=>{
+      console.warn('saveMyLog Firebase hata:', e.message);
+    });
   }
   updateCounts();
 }
@@ -1356,7 +1354,7 @@ function updRatingVal(){
 // ════════════════════════════════════════════════════════════════
 // KAYDET
 // ════════════════════════════════════════════════════════════════
-async function saveItem(){
+async async function saveItem(){
   if(!currentItem || !currentDest){ showToast('❌ Kategori seçin'); return; }
   const item = currentItem;
   const dest = currentDest;
@@ -1587,8 +1585,7 @@ async function importSingleCSV(file){
     renderMyLog();
     showToast(`✅ ${count} film eklendi! Firebase'e yazılıyor…`);
     fetchPostersForLog(toFetch.slice(0,150));
-    // saveMyLog zaten chunk sistemiyle Firebase'e yazıyor
-    // Ek kontrol: 5sn sonra tamamının yazıldığını doğrula
+    // 3sn sonra Firebase sayısını kontrol et
     if(db && user){
       setTimeout(async()=>{
         try{
@@ -1596,15 +1593,14 @@ async function importSingleCSV(file){
           const fbCount = Object.keys(snap.val()||{}).length;
           const localCount = Object.keys(log).length;
           if(fbCount < localCount){
-            showToast(`🔄 Eksik sync (${fbCount}/${localCount}), tekrar deneniyor…`);
-            db.ref('userLogs/'+user.name).set(log)
-              .then(()=>showToast('✅ Senkronize tamam! Partner görebilir.'))
-              .catch(()=>{});
+            // Eksik - tekrar yaz
+            await db.ref('userLogs/'+user.name).set(log);
+            showToast(`✅ Sync tamam (${localCount} film)! Partner görebilir.`);
           } else {
-            showToast(`✅ ${fbCount} film Firebase'de! Partner görebilir.`);
+            showToast(`✅ ${fbCount} film senkronize! Partner görebilir.`);
           }
-        }catch(e){}
-      }, 8000);
+        }catch(e){ showToast('⚠️ Sync kontrol hatası: '+e.message); }
+      }, 3000);
     }
 
   } else if(fn.includes('ratings')){
