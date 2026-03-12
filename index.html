@@ -1747,6 +1747,31 @@ async function markWatched(id){
   document.getElementById('modal').classList.add('open');
 }
 
+async function markOngoingWatched(id){
+  const item = sharedLib[id];
+  if(!item || !db){ showToast('❌ Bağlantı yok'); return; }
+  const prev = sharedLib[id] || {};
+  const ratings  = Object.assign({}, prev.ratings  || {});
+  const notes    = Object.assign({}, prev.notes    || {});
+  const wantedBy = prev.wantedBy ? [...prev.wantedBy] : [user.name];
+  if(!wantedBy.includes(user.name)) wantedBy.push(user.name);
+  const updated = Object.assign({}, item, {
+    status: 'watched',
+    ratings, notes, wantedBy,
+    updatedAt: Date.now()
+  });
+  try {
+    sharedLib[id] = updated;
+    await db.ref('sharedLib/'+id).set(updated);
+    renderOngoing();
+    updateCounts();
+    showToast('✅ İzledik listesine taşındı!');
+  } catch(e){
+    sharedLib[id] = item;
+    showToast('❌ '+String(e.message||e).slice(0,60));
+  }
+}
+
 async function removeShared(id){
   if(!db) return;
   const backup = sharedLib[id] ? Object.assign({}, sharedLib[id]) : null;
