@@ -1199,6 +1199,7 @@ function toggleMyLogDone(id){
   const log = getMyLog();
   if(!log[id]) return;
   const isDone = log[id].myStatus === 'done';
+  const backup = Object.assign({}, log[id]);
   if(isDone){
     delete log[id].myStatus;
   } else {
@@ -1207,7 +1208,13 @@ function toggleMyLogDone(id){
   }
   saveMyLog(log);
   renderMyLog();
-  showToast(isDone ? '▶ Bitti işareti kaldırıldı!' : '✅ Dizi tamamlandı!');
+  showToast(isDone ? '▶ Bitti işareti kaldırıldı!' : '✅ Dizi tamamlandı!', ()=>{
+    const l2 = getMyLog();
+    l2[id] = backup;
+    saveMyLog(l2);
+    renderMyLog();
+    showToast('↩ Geri alındı!');
+  });
 }
 
 function removeMyLog(id){
@@ -1354,6 +1361,7 @@ function markMyLogDone(){
   if(!epModalMylogId) return;
   const log = getMyLog();
   if(log[epModalMylogId]){
+    const backup = Object.assign({}, log[epModalMylogId]);
     const isDone = log[epModalMylogId].myStatus === 'done';
     if(isDone){
       delete log[epModalMylogId].myStatus;
@@ -1364,7 +1372,13 @@ function markMyLogDone(){
     saveMyLog(log);
     renderMyLog();
     closeEpModal();
-    showToast(isDone ? '▶ Bitti işareti kaldırıldı!' : '✅ Dizi tamamlandı!');
+    showToast(isDone ? '▶ Bitti işareti kaldırıldı!' : '✅ Dizi tamamlandı!', ()=>{
+      const l2 = getMyLog();
+      l2[epModalMylogId] = backup;
+      saveMyLog(l2);
+      renderMyLog();
+      showToast('↩ Geri alındı!');
+    });
   }
 }
 
@@ -1765,7 +1779,13 @@ async function markOngoingWatched(id){
     await db.ref('sharedLib/'+id).set(updated);
     renderOngoing();
     updateCounts();
-    showToast('✅ İzledik listesine taşındı!');
+    showToast('✅ İzledik listesine taşındı!', async()=>{
+      sharedLib[id] = item;
+      await db.ref('sharedLib/'+id).set(item);
+      renderOngoing();
+      updateCounts();
+      showToast('↩ Geri alındı!');
+    });
   } catch(e){
     sharedLib[id] = item;
     showToast('❌ '+String(e.message||e).slice(0,60));
@@ -2020,19 +2040,18 @@ function emptyHtml(ico, txt, sub){
 }
 
 let _toastTimer;
+// ── Global Undo System ───────────────────────────────────────────
 function showToast(msg, undoFn){
   const t = document.getElementById('toast');
   clearTimeout(_toastTimer);
   if(undoFn){
-    t.innerHTML = msg + '<button onclick="if(window.__undoFn)window.__undoFn()" style="margin-left:10px;background:var(--gold);color:#000;border:none;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle">↩ Geri Al</button>';
+    t.innerHTML = msg + '<button onclick="if(window.__undoFn)window.__undoFn()" style="margin-left:10px;background:var(--gold);color:#000;border:none;border-radius:8px;padding:4px 12px;font-size:13px;font-weight:700;cursor:pointer;vertical-align:middle">↩ Geri Al</button>';
     t.style.pointerEvents = 'auto';
-    t.classList.add('undo');
-    window.__undoFn = ()=>{ undoFn(); t.classList.remove('show','undo'); t.style.pointerEvents='none'; window.__undoFn=null; };
-    _toastTimer = setTimeout(()=>{ t.classList.remove('show','undo'); t.style.pointerEvents='none'; window.__undoFn=null; }, 5000);
+    window.__undoFn = ()=>{ undoFn(); t.classList.remove('show'); t.style.pointerEvents='none'; window.__undoFn=null; clearTimeout(_toastTimer); };
+    _toastTimer = setTimeout(()=>{ t.classList.remove('show'); t.style.pointerEvents='none'; window.__undoFn=null; }, 5000);
   } else {
     t.textContent = msg;
     t.style.pointerEvents = 'none';
-    t.classList.remove('undo');
     _toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
   }
   t.classList.add('show');
