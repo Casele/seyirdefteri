@@ -237,6 +237,16 @@ img{display:block}
 .disc-head span{background:var(--s3);color:var(--t2);border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700;letter-spacing:0}
 .own-tag{display:inline-block;background:rgba(180,139,232,.14);color:var(--bun,#b48be8);border:1px solid rgba(180,139,232,.35);
   border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;margin:4px 0}
+.matchb{display:inline-block;background:rgba(232,184,75,.14);color:var(--gold);border:1px solid var(--goldbr);
+  border-radius:8px;padding:1px 8px;font-size:10px;font-weight:800;letter-spacing:.2px}
+.own-tag.half{background:rgba(126,184,212,.14);color:var(--fox,#7eb8d4);border-color:rgba(126,184,212,.35)}
+.lposter{flex-shrink:0;cursor:pointer;line-height:0;border-radius:8px;transition:transform .16s ease, box-shadow .16s ease}
+.lposter:hover{transform:scale(1.05);box-shadow:0 6px 18px rgba(0,0,0,.55)}
+.lposter:active{transform:scale(.99)}
+.ovw{font-size:12px;color:var(--t3);line-height:1.55;cursor:pointer}
+.ovw.clamped{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ovw-more{font-size:11px;font-weight:700;color:var(--gold);cursor:pointer;margin-top:4px;user-select:none}
+.ovw-more:hover{opacity:.8}
 @media(max-width:640px){ .talt{white-space:normal} #notifMenu{width:300px} }
 </style>
 </head>
@@ -472,7 +482,8 @@ img{display:block}
       <div class="modal-info">
         <div class="modal-title serif" id="mTitle"></div>
         <div class="modal-meta" id="mMeta"></div>
-        <div id="mOverview" style="font-size:12px;color:var(--t3);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden"></div>
+        <div id="mOverview" class="ovw clamped" onclick="toggleOverview()"></div>
+        <div id="mOverviewMore" class="ovw-more" onclick="toggleOverview()" style="display:none">▾ Devamını oku</div>
       </div>
     </div>
     <div class="modal-sect">Nereye ekleyelim?</div>
@@ -685,6 +696,32 @@ function applyImdb(node, v){
   else node.remove();
 }
 function afterRender(){ setTimeout(hydrateImdb, 60); }
+
+// Kayıtlı bir girdiyi modalın beklediği TMDB formatına çevirir
+function rawOf(e){
+  try{ const r = e.raw ? JSON.parse(e.raw) : null; if(r && (r.id||r.title||r.name)) return r; }catch(x){}
+  const y = e.year || '';
+  return {
+    id: e.tmdbId || e.id,
+    title: e.titleTr || e.title || '', name: e.titleTr || e.title || '',
+    titleTr: e.titleTr || e.title || '', titleEn: e.titleEn || '',
+    origTitle: e.origTitle || '', origLang: e.origLang || '',
+    original_title: e.origTitle || '', original_language: e.origLang || '',
+    media_type: e.tv ? 'tv' : 'movie',
+    poster_path: (e.poster && e.poster !== 'N/A') ? e.poster : '',
+    release_date: e.tv ? '' : (y ? y+'-01-01' : ''),
+    first_air_date: e.tv ? (y ? y+'-01-01' : '') : '',
+    vote_average: e.score || 0, overview: e.overview || '', genre_ids: []
+  };
+}
+
+// Listelerde poster: tıklayınca detay panelini açar
+function posterHtml(e, ck){
+  const inner = (e.poster && e.poster !== 'N/A')
+    ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
+    : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+  return ck ? `<div class="lposter" title="Detayları aç" onclick="openModal(getCached('${ck}'))">${inner}</div>` : inner;
+}
 
 
 const _ic = {}; let _ii = 0;
@@ -1311,10 +1348,8 @@ function renderWatched(){
   const el = document.getElementById('watchedList');
   if(!items.length){ el.innerHTML = emptyHtml('🎬','Henüz ortak film izlemedik','Aramadan birlikte izledik olarak ekleyin'); return; }
   el.innerHTML = items.map(e => {
-    const poster = (e.poster && e.poster !== 'N/A')
-      ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
-      : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
-    const ck = cacheItem(e.raw?JSON.parse(e.raw):e);
+    const ck = cacheItem(rawOf(e));
+    const poster = posterHtml(e, ck);
     const watcherIcons = Object.keys(e.ratings||{}).filter(n=>USERS.find(u=>u.name===n))
       .map(n=>`<span title="${n} izledi" style="font-size:15px">${emoji(n)}</span>`).join('');
     const ratingHtml = Object.entries(e.ratings||{}).map(([n,r])=>
@@ -1350,10 +1385,8 @@ function renderWatchlist(){
   const el = document.getElementById('watchlistList');
   if(!items.length){ el.innerHTML = emptyHtml('🎬','İzleyecek listeniz boş','Aramadan birlikte izleyeceğiz olarak ekleyin'); return; }
   el.innerHTML = items.map(e => {
-    const poster = (e.poster && e.poster !== 'N/A')
-      ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
-      : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
-    const ck = cacheItem(e.raw?JSON.parse(e.raw):e);
+    const ck = cacheItem(rawOf(e));
+    const poster = posterHtml(e, ck);
     const wb = e.wantedBy || (e.addedBy?[e.addedBy]:[]);
     const wlIcons = wb.filter(n=>USERS.find(u=>u.name===n))
       .map(n=>`<span title="${n} izlemek istiyor" style="font-size:15px">${emoji(n)}</span>`).join('');
@@ -1383,9 +1416,8 @@ function renderSuggestions(){
     return;
   }
   el.innerHTML = filteredSugs.map(sug => {
-    const poster = (sug.poster && sug.poster !== 'N/A')
-      ? `<img class="limg" src="${IMG_BASE}${sug.poster}" loading="lazy" alt=""/>`
-      : `<div class="lph">${sug.tv?'📺':'🎬'}</div>`;
+    const sck = cacheItem(rawOf(sug));
+    const poster = posterHtml(sug, sck);
     const isMe = sug.suggestedBy === user.name;
     const sugKey = sug.ts || sug.id;
     const actions = isMe
@@ -1462,9 +1494,8 @@ function renderMyLog(){
   }
   const isMe = myLogView==='me';
   el.innerHTML = filtered.map(e => {
-    const poster = (e.poster && e.poster !== 'N/A')
-      ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
-      : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const mck = cacheItem(rawOf(e));
+    const poster = posterHtml(e, mck);
     const stars = e.rating>0 ? `<span style="color:var(--gold);font-size:12px">★ ${e.rating}</span>` : '';
     const dateStr = e.loggedAt ? new Date(e.loggedAt).toLocaleDateString('tr-TR') : '';
     return `<div class="lrow">
@@ -1570,9 +1601,8 @@ function renderOngoing(){
   if(!items.length){ el.innerHTML = emptyHtml('▶','Devam listesi boş','Aramadan "Devam Ediyoruz" olarak ekleyin'); return; }
   el.innerHTML = items.map(item=>{
     const yr = item.year||'';
-    const poster = (item.poster && item.poster !== 'N/A')
-      ? `<img class="limg" src="${IMG_BASE}${item.poster}" loading="lazy"/>`
-      : `<div class="lph">${item.tv?'📺':'🎬'}</div>`;
+    const ock = cacheItem(rawOf(item));
+    const poster = posterHtml(item, ock);
     const rFox = item.ratings?.Fox ? `🦊 ${'★'.repeat(Math.round(item.ratings.Fox))}` : '';
     const rBun = item.ratings?.Bun ? `🐰 ${'★'.repeat(Math.round(item.ratings.Bun))}` : '';
     const epBadge = item.episode
@@ -1842,9 +1872,8 @@ function renderPersonal(){
     return;
   }
   el.innerHTML = items.map(e => {
-    const poster = (e.poster && e.poster !== 'N/A')
-      ? `<img class="limg" src="${IMG_BASE}${e.poster}" loading="lazy" alt=""/>`
-      : `<div class="lph">${e.tv?'📺':'🎬'}</div>`;
+    const pck = cacheItem(rawOf(e));
+    const poster = posterHtml(e, pck);
     const safeId = (e.id||'').replace(/'/g,"\'");
     return `<div class="lrow">
       ${poster}
@@ -1857,8 +1886,10 @@ function renderPersonal(){
         ${e.note&&e.note!=='Letterboxd watchlist'?`<div class="lnote">"${e.note}"</div>`:''}
         <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
           ${isMe ? `
-          <button class="btn bgold bxs" onclick="suggestFromPersonal('${safeId}')">💡 Öner</button>
+          <button class="btn bgreen bxs" onclick="personalToWatched('${safeId}')">✓ İzledik</button>
+          <button class="btn bblue bxs" onclick="personalToMyLog('${safeId}')">📓 İzledim</button>
           <button class="btn bghost bxs" onclick="addPersonalToShared('${safeId}')">🎬 İzleyeceğiz</button>
+          <button class="btn bgold bxs" onclick="suggestFromPersonal('${safeId}')">💡 Öner</button>
           <button class="btn bred bxs" onclick="removePersonal('${safeId}')">Kaldır</button>
           ` : ''}
         </div>
@@ -1878,6 +1909,53 @@ function removePersonal(id){
     renderPersonal();
     showToast('↩ Geri alındı!');
   } : null);
+}
+
+// Listemden → ikimiz izledik (ortak arşiv)
+async function personalToWatched(id){
+  const e = personalLib[id];
+  if(!e){ return; }
+  if(!db){ showToast('❌ Firebase bağlantısı yok'); return; }
+  const sid = e.tmdbId || id;
+  const prev = sharedLib[sid] || {};
+  const ratings = Object.assign({}, prev.ratings||{});
+  const wantedBy = prev.wantedBy ? [...prev.wantedBy] : [user.name];
+  if(!wantedBy.includes(user.name)) wantedBy.push(user.name);
+  try{
+    await db.ref('sharedLib/'+sid).set(Object.assign({}, e, {
+      id:sid, status:'watched', ratings, notes:prev.notes||{}, wantedBy,
+      addedBy:user.name, addedAt:Date.now()
+    }));
+    const backup = Object.assign({}, e);
+    delete personalLib[id]; savePersonal(); renderPersonal();
+    showToast('✓ Ortak arşive taşındı!', ()=>{
+      personalLib[id] = backup; savePersonal(); renderPersonal();
+      db.ref('sharedLib/'+sid).remove().catch(()=>{});
+      showToast('↩ Geri alındı!');
+    });
+  }catch(err){ showToast('❌ '+String(err.message||err).slice(0,60)); }
+}
+
+// Listemden → kişisel günlük (ben izledim)
+function personalToMyLog(id){
+  const e = personalLib[id];
+  if(!e) return;
+  const log = getMyLog();
+  const lid = e.tmdbId || id;
+  log[lid] = Object.assign({}, e, {
+    id: lid, tmdbId: /^\d+$/.test(String(lid)) ? String(lid) : (e.tmdbId||''),
+    rating: 0, note: e.note && e.note!=='Letterboxd watchlist' ? e.note : '',
+    loggedAt: Date.now()
+  });
+  saveMyLog(log);
+  const backup = Object.assign({}, e);
+  delete personalLib[id];
+  savePersonal(); renderPersonal();
+  showToast('📓 İzledim listesine taşındı!', ()=>{
+    const l2 = getMyLog(); delete l2[lid]; saveMyLog(l2);
+    personalLib[id] = backup; savePersonal(); renderPersonal();
+    showToast('↩ Geri alındı!');
+  });
 }
 
 function addPersonalToShared(id){
@@ -1920,12 +1998,48 @@ function openModal(item){
     ${imdbBadge(item.tmdbId||item.id, tv)}
   `;
   afterRender();
-  document.getElementById('mOverview').textContent = item.overview||'';
+  setOverview(item.overview||'', item, tv);
   document.getElementById('noteInput').value = '';
   document.getElementById('ratingSection').style.display = 'none';
   buildStars();
   updateDestUI();
   document.getElementById('modal').classList.add('open');
+}
+
+function toggleOverview(){
+  const o = document.getElementById('mOverview');
+  const m = document.getElementById('mOverviewMore');
+  const open = o.classList.toggle('clamped');
+  m.textContent = open ? '▾ Devamını oku' : '▴ Daha az göster';
+}
+function setOverview(txt, item, tv){
+  const o = document.getElementById('mOverview');
+  const m = document.getElementById('mOverviewMore');
+  o.classList.add('clamped');
+  o.textContent = txt || '';
+  m.textContent = '▾ Devamını oku';
+  m.style.display = 'none';
+  setTimeout(()=>{ if(o.scrollHeight > o.clientHeight + 4) m.style.display='block'; }, 30);
+
+  // Açıklama yoksa TMDB'den çek (önce TR, boşsa EN)
+  const id = item && (item.tmdbId || item.id);
+  if(!txt && id && /^\d+$/.test(String(id))){
+    const kind = tv ? 'tv' : 'movie';
+    (async()=>{
+      try{
+        let d = await fetch(`${TMDB_BASE}/${kind}/${id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json());
+        let ov = d.overview;
+        if(!ov){
+          d = await fetch(`${TMDB_BASE}/${kind}/${id}?api_key=${TMDB_KEY}&language=en-US`).then(r=>r.json());
+          ov = d.overview;
+        }
+        if(ov && currentItem && String(currentItem.id)===String(item.id)){
+          o.textContent = ov;
+          setTimeout(()=>{ if(o.scrollHeight > o.clientHeight + 4) m.style.display='block'; }, 30);
+        }
+      }catch(e){}
+    })();
+  }
 }
 
 function closeModal(){ document.getElementById('modal').classList.remove('open'); currentItem=null; }
@@ -2066,7 +2180,7 @@ async function markWatched(id){
   const item = sharedLib[id];
   if(!item||!db) return;
   const ck = cacheItem(item);
-  currentItem = item.raw?JSON.parse(item.raw):item;
+  currentItem = rawOf(item);
   currentDest = 'shared-watched';
   currentRating = 0;
   document.getElementById('mTitle').innerHTML = dispTitleHtml(item);
@@ -2074,7 +2188,7 @@ async function markWatched(id){
     ? `<img class="modal-poster" src="${IMG_BASE}${item.poster}" alt=""/>`
     : `<div class="modal-poster-ph">${item.tv?'📺':'🎬'}</div>`;
   document.getElementById('mMeta').innerHTML = `<span class="chip ${item.tv?'ctv':'cmovie'}">${item.tv?'Dizi':'Film'}</span>`;
-  document.getElementById('mOverview').textContent = '';
+  setOverview(item.overview||'', item, !!item.tv);
   document.getElementById('noteInput').value = '';
   buildStars();
   updateDestUI();
@@ -2357,11 +2471,32 @@ function fetchMissingPosters(){
 
 
 // ════════════════════════════════════════════════════════════════
-// ✨ SANA ÖZEL — "İzledik" listesine göre öneri motoru
+// ✨ SANA ÖZEL — Zevk Profili v2
+// ────────────────────────────────────────────────────────────────
+// Kanıt toplama (ağırlıklı tohumlar) → aday havuzu → çok sinyalli
+// skorlama → çeşitlilik filtresi. Ayrıntı: scoreCandidate().
 // ════════════════════════════════════════════════════════════════
 let discFilter = 'all';
-let discData   = null;   // { ts, items:[...] }
+let discData   = null;
 let discBusy   = false;
+
+// Çok yaygın türler baskın çıkmasın diye önsel ağırlık (IDF benzeri)
+const GENRE_PRIOR = { 18:0.62, 35:0.74, 28:0.78, 12:0.85, 53:0.86, 10749:0.9, 80:0.92, 10751:0.92 };
+let GENRE_NAMES = lsGet('cm_genre_names') || null;
+
+async function loadGenreNames(){
+  if(GENRE_NAMES) return GENRE_NAMES;
+  try{
+    const [m,t] = await Promise.all([
+      fetch(`${TMDB_BASE}/genre/movie/list?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json()),
+      fetch(`${TMDB_BASE}/genre/tv/list?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json())
+    ]);
+    const map = {};
+    [...(m.genres||[]), ...(t.genres||[])].forEach(g=>{ map[g.id] = g.name; });
+    GENRE_NAMES = map; lsSet('cm_genre_names', map);
+  }catch(e){ GENRE_NAMES = {}; }
+  return GENRE_NAMES;
+}
 
 function setDiscFilter(f, btn){
   discFilter = f;
@@ -2376,17 +2511,17 @@ function openDiscover(){
   else renderDiscover();
 }
 
-// Kişisel listelerde/günlüklerde arama yapmak için normalize edilmiş dizin
+// ── Kişisel listeler / günlükler için normalize dizin ────────────
 function personalIndex(){
   const idx = { ids:{}, keys:{} };
   const add = (lib, who) => {
     Object.values(lib||{}).forEach(e=>{
       const tid = e.tmdbId || e.id;
       if(tid) idx.ids[String(tid)] = who;
-      const k = nrm(e.titleEn||'') + '|' + (e.year||'');
-      const k2 = nrm(e.titleTr||e.title||'') + '|' + (e.year||'');
-      if(k.length>2)  idx.keys[k]  = who;
-      if(k2.length>2) idx.keys[k2] = who;
+      const y = e.year || '';
+      [nrm(e.titleEn||''), nrm(e.titleTr||e.title||''), nrm(e.origTitle||'')].forEach(k=>{
+        if(k.length>2) idx.keys[k+'|'+y] = who;
+      });
     });
   };
   const p = partner();
@@ -2394,101 +2529,299 @@ function personalIndex(){
   add(partnerPersonal, p ? p.name : 'Partner');
   return idx;
 }
-
+function logIndex(){
+  const idx = {};
+  const add = (lib, who) => {
+    Object.values(lib||{}).forEach(e=>{
+      const tid = e.tmdbId || e.id;
+      const y = e.year||'';
+      const keys = [tid ? 'id:'+tid : null,
+                    nrm(e.titleEn||'') ? 'k:'+nrm(e.titleEn)+'|'+y : null,
+                    nrm(e.titleTr||e.title||'') ? 'k:'+nrm(e.titleTr||e.title)+'|'+y : null];
+      keys.filter(Boolean).forEach(k=>{ idx[k] = (idx[k]||[]); if(!idx[k].includes(who)) idx[k].push(who); });
+    });
+  };
+  const p = partner();
+  add(getMyLog(), user?.name||'Sen');
+  add(partnerLog, p ? p.name : 'Partner');
+  return idx;
+}
+function lookupLog(idx, cand){
+  const t = tmdbTitles(cand);
+  const cands = ['id:'+cand.id, 'k:'+nrm(t.titleEn)+'|'+t.year, 'k:'+nrm(t.titleTr)+'|'+t.year];
+  for(const k of cands){ if(idx[k]) return idx[k]; }
+  return null;
+}
 function inSharedAlready(id){
   if(sharedLib[id]) return true;
   return !!Object.values(sharedLib).find(e=>String(e.tmdbId||e.id)===String(id));
+}
+
+// ── 1) TOHUMLAR: neyi ne kadar sevdiğimizin kanıtı ──────────────
+function collectSeeds(){
+  const pos = [], neg = [];
+  const now = Date.now();
+  const recency = ts => {
+    const days = Math.max(0,(now-(ts||now))/86400000);
+    return 0.72 + 0.63 * Math.exp(-days/240);     // yeni eklenen ≈1.35, çok eski ≈0.72
+  };
+
+  Object.values(sharedLib).forEach(e=>{
+    const id = e.tmdbId || e.id;
+    if(!/^\d+$/.test(String(id))) return;
+    if(e.status!=='watched' && e.status!=='ongoing') return;
+    const rs = Object.values(e.ratings||{}).filter(r=>r>0);
+    const avg = rs.length ? rs.reduce((a,b)=>a+b,0)/rs.length : 0;
+    const both = rs.length >= 2;                    // ikisi de puanlamış = ortak zevk
+    if(avg > 0 && avg <= 2){ neg.push({ id:String(id), tv:!!e.tv, title:dispTitleText(e), w:1 }); return; }
+    let w = 1.0;
+    if(avg > 0) w *= (0.45 + (avg/5)*1.15);         // 5★ → 1.6 · 3★ → 1.14
+    if(both)    w *= 1.25;
+    if(e.status==='ongoing') w *= 1.1;              // şu an izlenen = güncel zevk
+    w *= recency(e.addedAt);
+    pos.push({ id:String(id), tv:!!e.tv, title:dispTitleText(e), w, raw:e.raw, year:e.year });
+  });
+
+  // Kişisel günlükte yüksek puan verilenler (daha zayıf kanıt)
+  const addLog = (lib, mult) => Object.values(lib||{}).forEach(e=>{
+    const id = e.tmdbId || e.id;
+    if(!/^\d+$/.test(String(id))) return;
+    if(pos.find(p=>p.id===String(id))) return;
+    if(e.rating >= 4)      pos.push({ id:String(id), tv:!!e.tv, title:dispTitleText(e), w:(0.55+(e.rating-4)*0.35)*mult*recency(e.loggedAt), year:e.year });
+    else if(e.rating>0 && e.rating<=1.5) neg.push({ id:String(id), tv:!!e.tv, title:dispTitleText(e), w:0.6 });
+  });
+  addLog(getMyLog(), 1.0);
+  addLog(partnerLog, 0.85);
+
+  pos.sort((a,b)=>b.w-a.w);
+  neg.sort((a,b)=>b.w-a.w);
+  return { pos: pos.slice(0,18), neg: neg.slice(0,8) };
+}
+
+// ── 2) Tür profili (ağırlıklı + yaygınlık düzeltmeli) ───────────
+function genreProfile(seeds){
+  const raw = {};
+  let total = 0;
+  seeds.forEach(sd=>{
+    let gs = sd.genre_ids;
+    if(!gs && sd.raw){ try{ gs = (JSON.parse(sd.raw).genre_ids)||[]; }catch(e){ gs=[]; } }
+    (gs||[]).forEach(g=>{ raw[g] = (raw[g]||0) + sd.w; total += sd.w; });
+  });
+  const prof = {};
+  let norm = 0;
+  Object.keys(raw).forEach(g=>{
+    const v = (raw[g]/(total||1)) * (GENRE_PRIOR[g] || 1);
+    prof[g] = v; norm += v*v;
+  });
+  norm = Math.sqrt(norm) || 1;
+  Object.keys(prof).forEach(g=>{ prof[g] = prof[g]/norm; });
+  return prof;
+}
+function genreFit(genres, prof){
+  if(!genres || !genres.length) return 0;
+  let dot = 0, n = 0;
+  genres.forEach(g=>{ dot += (prof[g]||0); n++; });
+  return Math.min(1, dot / Math.sqrt(n||1));
+}
+
+// ── 3) Aday çekme (EN ana dil → titleEn her zaman dolu) ─────────
+async function fetchList(path){
+  const [en, tr] = await Promise.all([
+    fetch(`${TMDB_BASE}${path}&language=en-US`).then(r=>r.json()).catch(()=>({})),
+    fetch(`${TMDB_BASE}${path}&language=tr-TR`).then(r=>r.json()).catch(()=>({}))
+  ]);
+  const trMap = {};
+  (tr.results||[]).forEach(x=>{ trMap[x.id] = x.title || x.name || ''; });
+  return (en.results||[]).map(x=>{
+    x.titleEn   = x.title || x.name || '';
+    x.titleTr   = trMap[x.id] || '';
+    x.origTitle = x.original_title || x.original_name || '';
+    x.origLang  = x.original_language || '';
+    return x;
+  });
 }
 
 async function buildDiscover(force){
   if(discBusy) return;
   const el = document.getElementById('discoverList');
   const cached = lsGet('cm_discover_'+(user?.name||''));
-  if(!force && cached && Date.now()-cached.ts < 24*60*60*1000){
+  if(!force && cached && cached.v===2 && Date.now()-cached.ts < 24*60*60*1000){
     discData = cached; renderDiscover(); return;
   }
 
-  // Tohum: birlikte izlenenler (en yeni 14 tanesi) + "devam" listesindekiler
-  let seeds = Object.values(sharedLib)
-    .filter(e=>(e.status==='watched'||e.status==='ongoing') && /^\d+$/.test(String(e.tmdbId||e.id)))
-    .sort((a,b)=>(b.addedAt||0)-(a.addedAt||0))
-    .slice(0,14);
-
-  if(!seeds.length){
-    if(el) el.innerHTML = emptyHtml('✨','Önce birkaç yapım izleyin','“İzledik” sekmesine ekledikçe buraya öneriler düşer');
-    setCount('discover', 0);
-    return;
+  const { pos, neg } = collectSeeds();
+  if(!pos.length){
+    if(el) el.innerHTML = emptyHtml('✨','Önce birkaç yapım izleyin','“İzledik” sekmesine ekledikçe ve puan verdikçe öneriler keskinleşir');
+    setCount('discover', 0); return;
   }
 
   discBusy = true;
-  if(el) el.innerHTML = '<div class="empty"><div class="eico">⏳</div><div class="etxt">Öneriler hazırlanıyor…</div><div class="esub">'+seeds.length+' yapım analiz ediliyor</div></div>';
+  await loadGenreNames();
+  const setStatus = (t,sub) => { if(el) el.innerHTML = '<div class="empty"><div class="eico">⏳</div><div class="etxt">'+t+'</div><div class="esub">'+sub+'</div></div>'; };
+  setStatus('Zevk profiliniz çıkarılıyor…', pos.length+' beğenilen · '+neg.length+' beğenilmeyen yapım');
 
-  const pool = {};   // tmdbId -> {item, score, reasons:[]}
-  const genreScore = {};
-
-  // Tohumların türlerinden zevk profili çıkar
-  seeds.forEach(sd=>{
-    try{
-      const raw = sd.raw ? JSON.parse(sd.raw) : null;
-      (raw && raw.genre_ids || []).forEach(g=>{ genreScore[g] = (genreScore[g]||0)+1; });
-    }catch(e){}
-  });
-
-  for(const sd of seeds){
-    const id = sd.tmdbId || sd.id;
-    const kind = sd.tv ? 'tv' : 'movie';
-    for(const path of ['recommendations','similar']){
+  // Tohumların tür bilgisini doldur (raw yoksa TMDB'den)
+  for(const sd of pos.slice(0,18)){
+    if(sd.raw){ try{ sd.genre_ids = JSON.parse(sd.raw).genre_ids || null; }catch(e){} }
+    if(!sd.genre_ids){
       try{
-        const [rTR, rEN] = await Promise.all([
-          fetch(`${TMDB_BASE}/${kind}/${id}/${path}?api_key=${TMDB_KEY}&language=tr-TR&page=1`).then(r=>r.json()),
-          fetch(`${TMDB_BASE}/${kind}/${id}/${path}?api_key=${TMDB_KEY}&language=en-US&page=1`).then(r=>r.json())
-        ]);
-        const enMap = {};
-        (rEN.results||[]).forEach(x=>{ enMap[x.id] = x.title||x.name||''; });
-        (rTR.results||[]).slice(0,12).forEach((x, i)=>{
+        const d = await fetch(`${TMDB_BASE}/${sd.tv?'tv':'movie'}/${sd.id}?api_key=${TMDB_KEY}&language=en-US`).then(r=>r.json());
+        sd.genre_ids = (d.genres||[]).map(g=>g.id);
+        sd.year = sd.year || (d.release_date||d.first_air_date||'').slice(0,4);
+      }catch(e){ sd.genre_ids = []; }
+      await new Promise(r=>setTimeout(r,90));
+    }
+  }
+  const prof = genreProfile(pos);
+  const seedLangs = {};
+  const seedYears = [];
+  pos.forEach(sd=>{ if(sd.year) seedYears.push(+sd.year); });
+  const meanYear = seedYears.length ? seedYears.reduce((a,b)=>a+b,0)/seedYears.length : 0;
+
+  const pool = {};   // id -> { item, ev, seeds:[], neg:0 }
+  const bump = (x, seedTitle, w, negative) => {
+    const k = String(x.id);
+    if(!pool[k]) pool[k] = { item:x, ev:0, seeds:[], neg:0 };
+    if(negative){ pool[k].neg += w; return; }
+    pool[k].ev += w;
+    if(seedTitle && !pool[k].seeds.includes(seedTitle) && pool[k].seeds.length<3) pool[k].seeds.push(seedTitle);
+  };
+
+  // 3a) Beğenilenlerin önerileri + benzerleri
+  let done = 0;
+  for(const sd of pos){
+    const kind = sd.tv ? 'tv' : 'movie';
+    const paths = [['recommendations', 1.0]];
+    if(done < 10) paths.push(['similar', 0.55]);      // similar sadece en güçlü 10 tohum için
+    for(const [path, srcW] of paths){
+      try{
+        const res = await fetchList(`/${kind}/${sd.id}/${path}?api_key=${TMDB_KEY}&page=1`);
+        res.slice(0,14).forEach((x,i)=>{
           if(!x.poster_path) return;
-          const key = String(x.id);
-          if(inSharedAlready(key)) return;
           x.media_type = kind;
-          x.titleTr   = x.title||x.name||'';
-          x.titleEn   = enMap[x.id] || '';
-          x.origTitle = x.original_title||x.original_name||'';
-          x.origLang  = x.original_language||'';
-          let w = (path==='recommendations' ? 3 : 1.6) * (1 - i*0.045);
-          (x.genre_ids||[]).forEach(g=>{ if(genreScore[g]) w += Math.min(genreScore[g],4)*0.22; });
-          w += Math.max(0,(x.vote_average||0)-6) * 0.25;
-          if((x.vote_count||0) < 60) w -= 1.2;
-          if(!pool[key]) pool[key] = { item:x, score:0, reasons:[] };
-          pool[key].score += w;
-          const rt = dispTitleText(sd);
-          if(pool[key].reasons.length < 3 && !pool[key].reasons.includes(rt)) pool[key].reasons.push(rt);
+          seedLangs[x.origLang] = (seedLangs[x.origLang]||0);
+          bump(x, sd.title, sd.w * srcW * (1 - i*0.035), false);
         });
       }catch(e){}
-      await new Promise(r=>setTimeout(r,120));
+      await new Promise(r=>setTimeout(r,110));
+    }
+    done++;
+    setStatus('Öneriler taranıyor…', done+' / '+pos.length+' yapım incelendi');
+  }
+
+  // 3b) Beğenilmeyenlerin önerileri → ceza
+  for(const sd of neg.slice(0,5)){
+    try{
+      const res = await fetchList(`/${sd.tv?'tv':'movie'}/${sd.id}/recommendations?api_key=${TMDB_KEY}&page=1`);
+      res.slice(0,12).forEach(x=>{ x.media_type = sd.tv?'tv':'movie'; bump(x, null, sd.w, true); });
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,110));
+  }
+
+  // 3c) En sevilen 3 türden kaliteli keşif (havuzu tazeler)
+  const topGenres = Object.keys(prof).sort((a,b)=>prof[b]-prof[a]).slice(0,3);
+  if(topGenres.length){
+    setStatus('Keşif havuzu hazırlanıyor…', topGenres.map(g=>GENRE_NAMES[g]||g).join(' · '));
+    for(const kind of ['movie','tv']){
+      for(const gpair of [topGenres.slice(0,2).join(','), topGenres.slice(1,3).join(',')]){
+        if(!gpair) continue;
+        try{
+          const res = await fetchList(`/discover/${kind}?api_key=${TMDB_KEY}&with_genres=${gpair}&sort_by=vote_average.desc&vote_count.gte=800&page=1`);
+          res.slice(0,12).forEach((x,i)=>{
+            if(!x.poster_path) return;
+            x.media_type = kind;
+            bump(x, null, 0.30 * (1 - i*0.04), false);
+          });
+        }catch(e){}
+        await new Promise(r=>setTimeout(r,110));
+      }
     }
   }
 
-  const idx = personalIndex();
-  const items = Object.keys(pool).map(k=>{
-    const o = pool[k];
-    const t = tmdbTitles(o.item);
-    const kEn = nrm(t.titleEn)+'|'+t.year;
-    const kTr = nrm(t.titleTr)+'|'+t.year;
-    const owner = idx.ids[k] || idx.keys[kEn] || idx.keys[kTr] || null;
-    return {
-      id: k, item: o.item, reasons: o.reasons,
-      score: o.score + (owner ? 6 : 0),   // listede duranlar öne çıksın
-      owner
-    };
-  }).sort((a,b)=>b.score-a.score).slice(0,60);
+  // ── 4) SKORLAMA ────────────────────────────────────────────────
+  const pidx = personalIndex();
+  const lidx = logIndex();
+  const blocked = lsGet('cm_disc_block') || {};
+  const bothUsers = [user?.name, partner()?.name].filter(Boolean);
 
-  discData = { ts: Date.now(), items: items.map(x=>({
-    id:x.id, owner:x.owner, reasons:x.reasons, score:Math.round(x.score*10)/10, item:x.item
-  })) };
+  let items = Object.keys(pool).map(k=>{
+    const o = pool[k], x = o.item;
+    if(inSharedAlready(k)) return null;
+    if(blocked[k]) return null;
+    if(x.adult) return null;
+    if((x.vote_count||0) < 40) return null;
+
+    const watchedBy = lookupLog(lidx, x) || [];
+    if(watchedBy.length >= 2) return null;                 // ikisi de izlemiş → önerme
+
+    const t = tmdbTitles(x);
+    const owner = pidx.ids[k]
+      || pidx.keys[nrm(t.titleEn)+'|'+t.year]
+      || pidx.keys[nrm(t.titleTr)+'|'+t.year]
+      || null;
+
+    // a) kanıt gücü + çok-tohum bonusu
+    const distinct = o.seeds.length;
+    let score = o.ev * (1 + 0.40 * Math.log(1 + Math.max(0,distinct-1)));
+
+    // b) tür uyumu
+    const gf = genreFit(x.genre_ids||[], prof);
+    score += gf * 2.4;
+
+    // c) bayes kalite (az oylu yüksek puanları şişirmez)
+    const v = x.vote_count||0, R = x.vote_average||0, m = 350, C = 6.4;
+    const bayes = (v*R + m*C)/(v+m);
+    score += (bayes - 6.3) * 1.0;
+    if(v < 150) score -= 1.1;
+    if(v < 300) score -= 0.4;
+
+    // d) dönem yakınlığı
+    const cy = +((x.release_date||x.first_air_date||'').slice(0,4)) || 0;
+    if(meanYear && cy) score -= Math.max(0, (Math.abs(cy-meanYear)-22)) * 0.035;
+
+    // e) beğenilmeyenlerin komşusu → ceza
+    score -= o.neg * 1.6;
+
+    // f) listede duruyor / biriniz izlemiş
+    if(owner) score += 2.2;
+    if(watchedBy.length === 1) score += 0.9;
+
+    return {
+      id:k, item:x, reasons:o.seeds, owner,
+      watchedBy: watchedBy.length===1 ? watchedBy[0] : null,
+      gf: Math.round(gf*100), bayes: Math.round(bayes*10)/10,
+      score
+    };
+  }).filter(Boolean);
+
+  items.sort((a,b)=>b.score-a.score);
+
+  // ── 5) ÇEŞİTLİLİK: aynı türden arka arkaya yığılmayı kır ───────
+  const gcount = {};
+  items.forEach(it=>{
+    const g = (it.item.genre_ids||[])[0];
+    if(g==null) return;
+    gcount[g] = (gcount[g]||0)+1;
+    if(gcount[g] > 4) it.score -= (gcount[g]-4) * 0.55;
+  });
+  items.sort((a,b)=>b.score-a.score);
+
+  const top = items.slice(0,70);
+  const max = top.length ? top[0].score : 1;
+  top.forEach(it=>{
+    it.match = (max > 0.01 && it.score > 0)
+      ? Math.max(38, Math.min(99, Math.round((it.score/max)*99)))
+      : 42;
+  });
+
+  discData = { v:2, ts:Date.now(), seeds:pos.length,
+    topGenres: topGenres.map(g=>GENRE_NAMES[g]||g),
+    items: top.map(x=>({ id:x.id, owner:x.owner, watchedBy:x.watchedBy, reasons:x.reasons,
+      match:x.match, gf:x.gf, bayes:x.bayes, item:x.item })) };
   lsSet('cm_discover_'+(user?.name||''), discData);
   discBusy = false;
   renderDiscover();
-  showToast('✨ ' + discData.items.length + ' öneri hazırlandı!');
+  showToast('✨ '+discData.items.length+' öneri hazır! ('+pos.length+' yapım analiz edildi)');
 }
 
 function renderDiscover(){
@@ -2502,25 +2835,30 @@ function renderDiscover(){
 
   setCount('discover', discData.items.length);
   const sub = document.getElementById('discoverSub');
-  if(sub) sub.textContent = list.length + ' öneri · ' + new Date(discData.ts).toLocaleDateString('tr-TR') + ' tarihinde hesaplandı';
+  if(sub) sub.textContent = list.length+' öneri · '+(discData.seeds||0)+' yapımdan öğrenildi'
+    + (discData.topGenres && discData.topGenres.length ? ' · '+discData.topGenres.join(', ') : '');
 
   if(!list.length){ el.innerHTML = emptyHtml('✨','Bu filtrede öneri yok',''); return; }
 
   const inList = list.filter(x=>x.owner);
-  const fresh  = list.filter(x=>!x.owner);
+  const half   = list.filter(x=>!x.owner && x.watchedBy);
+  const fresh  = list.filter(x=>!x.owner && !x.watchedBy);
 
   const card = x => {
     const it = x.item;
     const tv = it.media_type==='tv';
     const yr = (it.release_date||it.first_air_date||'').slice(0,4);
     const ck = cacheItem(it);
-    const poster = it.poster_path
+    const poster = `<div class="lposter" title="Detayları aç" onclick="openModal(getCached('${ck}'))">` + (it.poster_path
       ? `<img class="limg" src="${IMG_BASE}${it.poster_path}" loading="lazy" alt=""/>`
-      : `<div class="lph">${tv?'📺':'🎬'}</div>`;
-    const why = x.reasons.length
-      ? `<div class="lnote">Çünkü <strong style="color:var(--t2)">${esc(x.reasons.join(', '))}</strong> izlediniz</div>` : '';
-    const own = x.owner
-      ? `<div class="own-tag">📋 ${esc(x.owner)} listesinde duruyor</div>` : '';
+      : `<div class="lph">${tv?'📺':'🎬'}</div>`) + `</div>`;
+    const gnames = (it.genre_ids||[]).slice(0,2).map(g=>(GENRE_NAMES||{})[g]).filter(Boolean).join(' · ');
+    const why = x.reasons && x.reasons.length
+      ? `<div class="lnote">Çünkü <strong style="color:var(--t2)">${esc(x.reasons.join(', '))}</strong> izlediniz${gnames?' · '+esc(gnames):''}</div>`
+      : `<div class="lnote">Zevk profilinize uyuyor${gnames?' · '+esc(gnames):''}</div>`;
+    const tags = [];
+    if(x.owner)     tags.push(`<div class="own-tag">📋 ${esc(x.owner)} listesinde duruyor</div>`);
+    if(x.watchedBy) tags.push(`<div class="own-tag half">👀 ${esc(x.watchedBy)} izlemiş — birlikte izlenebilir</div>`);
     return `<div class="lrow">
       ${poster}
       <div class="lbody">
@@ -2530,28 +2868,39 @@ function renderDiscover(){
           ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
           ${it.vote_average>0?`<span style="font-size:11px;color:var(--gold)">⭐${it.vote_average.toFixed(1)}</span>`:''}
           ${imdbBadge(it.id, tv)}
+          <span class="matchb" title="Zevk profilinizle uyum">%${x.match} uyum</span>
         </div>
-        ${own}
+        ${tags.join('')}
         ${why}
         <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
           <button class="btn bblue bxs"  onclick="discQuick('${ck}','watchlist')">🎬 İzleyeceğiz</button>
           <button class="btn bghost bxs" onclick="discQuick('${ck}','personal')">👤 Listeme</button>
           <button class="btn bgold bxs"  onclick="discQuick('${ck}','suggest')">💡 Öner</button>
-          <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Detay</button>
+          <button class="btn bghost bxs" onclick="discHide('${x.id}')">🚫 İlgilenmiyorum</button>
         </div>
       </div>
     </div>`;
   };
 
   let html = '';
-  if(inList.length){
-    html += `<div class="disc-head">📋 Listelerinizde duranlar <span>${inList.length}</span></div>` + inList.map(card).join('');
-  }
-  if(fresh.length){
-    html += `<div class="disc-head">🆕 Hiç listelerde olmayanlar <span>${fresh.length}</span></div>` + fresh.map(card).join('');
-  }
+  if(inList.length) html += `<div class="disc-head">📋 Listelerinizde duranlar <span>${inList.length}</span></div>` + inList.map(card).join('');
+  if(half.length)   html += `<div class="disc-head">👀 Biriniz izlemiş <span>${half.length}</span></div>` + half.map(card).join('');
+  if(fresh.length)  html += `<div class="disc-head">🆕 Keşif <span>${fresh.length}</span></div>` + fresh.map(card).join('');
   el.innerHTML = html;
   afterRender();
+}
+
+// "İlgilenmiyorum" → kalıcı kara liste, sonraki hesaplamalarda da çıkmaz
+function discHide(id){
+  const bl = lsGet('cm_disc_block') || {};
+  bl[id] = Date.now();
+  lsSet('cm_disc_block', bl);
+  if(discData){
+    discData.items = discData.items.filter(x=>x.id!==id);
+    lsSet('cm_discover_'+(user?.name||''), discData);
+    renderDiscover();
+  }
+  showToast('🚫 Bir daha önerilmeyecek');
 }
 
 async function discQuick(ck, dest){
@@ -2582,9 +2931,11 @@ async function discQuick(ck, dest){
       await db.ref('suggestions/sug_'+Date.now()).set(Object.assign({}, base, {suggestedBy:user.name, note:'', ts:Date.now()}));
       showToast('💡 Öneri gönderildi!');
     }
-    discData.items = discData.items.filter(x=>x.id!==id);
-    lsSet('cm_discover_'+(user?.name||''), discData);
-    renderDiscover();
+    if(discData){
+      discData.items = discData.items.filter(x=>x.id!==id);
+      lsSet('cm_discover_'+(user?.name||''), discData);
+      renderDiscover();
+    }
   }catch(e){ showToast('❌ '+String(e.message||e).slice(0,60)); }
 }
 
