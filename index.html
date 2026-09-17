@@ -214,6 +214,30 @@ img{display:block}
 .ep-ep-btn:hover{border-color:var(--blue);background:var(--blbg);color:var(--blue)}
 .ep-ep-on{border-color:var(--gold)!important;background:var(--goldbg)!important;color:var(--gold)!important}
 
+
+/* ── YENİ ÖZELLİKLER ─────────────────────────────────────────── */
+.talt{color:var(--t3);font-weight:500;font-size:.86em;white-space:nowrap}
+.imdbb{display:inline-block;background:rgba(245,197,24,.14);color:#f5c518;border:1px solid rgba(245,197,24,.35);
+  border-radius:6px;padding:1px 6px;font-size:10px;font-weight:800;letter-spacing:.3px;vertical-align:middle}
+.year-wrap{flex-shrink:0}
+.yinp{width:82px;text-align:center;letter-spacing:1px}
+.nextep{display:inline-block;background:rgba(126,184,212,.14);color:var(--blue,#7eb8d4);
+  border:1px solid rgba(126,184,212,.35);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700}
+.nextep.ended{background:rgba(255,255,255,.05);color:var(--t3);border-color:var(--s3)}
+.nextep.idle{background:transparent;color:var(--t3);border-color:var(--s3)}
+.bell-count{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:9px;background:var(--rose,#e26d7d);
+  color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1}
+.alert-row{padding:8px 10px;border-radius:10px;background:var(--s2);margin-bottom:6px;border-left:3px solid var(--s3)}
+.alert-row.unread{border-left-color:var(--gold);background:var(--goldbg)}
+.alert-msg{font-size:12px;color:var(--t1);line-height:1.45}
+.alert-ts{font-size:10px;color:var(--t3);margin-top:3px}
+.disc-head{font-size:12px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;
+  margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+.disc-head:first-child{margin-top:0}
+.disc-head span{background:var(--s3);color:var(--t2);border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700;letter-spacing:0}
+.own-tag{display:inline-block;background:rgba(180,139,232,.14);color:var(--bun,#b48be8);border:1px solid rgba(180,139,232,.35);
+  border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;margin:4px 0}
+@media(max-width:640px){ .talt{white-space:normal} #notifMenu{width:300px} }
 </style>
 </head>
 <body>
@@ -280,12 +304,15 @@ img{display:block}
       </div>
       
       <div style="position:relative">
-        <button class="hdr-switch" style="padding:5px 8px; font-size:14px" onclick="toggleNotifMenu()">🔔</button>
-        <div id="notifMenu" style="display:none; position:absolute; right:0; top:calc(100% + 10px); background:var(--surface); border:1px solid var(--s3); border-radius:16px; padding:20px; width:340px; box-shadow:0 10px 40px rgba(0,0,0,.8); z-index:200;">
-          <div style="font-size:11px; font-weight:700; color:var(--t3); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px">BİLDİRİMLER</div>
-          <button class="btn bgold" style="width:100%; justify-content:center; margin-bottom:12px; padding:10px" onclick="enableNotifications()">🔔 Bildirimleri Aç</button>
-          <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:12px; padding:10px" onclick="checkNewSeasons(true)">🔄 Şimdi Kontrol Et</button>
-          <div style="font-size:11px; color:var(--t3); line-height:1.5;">İzlediğiniz veya devam eden dizilerde yeni sezon veya bölüm çıkınca bildirim alırsınız. Uygulama açık olduğunda 12 saatte bir kontrol edilir. <br><br>Durum: <strong id="notifStatus" style="color:var(--t1)">Kapalı</strong></div>
+        <button class="hdr-switch" style="padding:5px 10px; font-size:15px; position:relative" onclick="toggleNotifMenu()">🔔<span id="bellCount" class="bell-count" style="display:none">0</span></button>
+        <div id="notifMenu" style="display:none; position:absolute; right:0; top:calc(100% + 10px); background:var(--surface); border:1px solid var(--s3); border-radius:16px; padding:18px; width:360px; max-width:88vw; box-shadow:0 10px 40px rgba(0,0,0,.8); z-index:200;">
+          <div style="font-size:11px; font-weight:700; color:var(--t3); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px">YENİ SEZON UYARILARI</div>
+          <div id="alertList" style="max-height:200px; overflow-y:auto; margin-bottom:12px"></div>
+          <button class="btn bgold" style="width:100%; justify-content:center; margin-bottom:8px; padding:9px" onclick="enableNotifications()">🔔 Bildirimleri Aç</button>
+          <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:8px; padding:9px" onclick="checkNewSeasons(true)">🔄 Şimdi Kontrol Et</button>
+          <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:8px; padding:9px" onclick="syncTitles()">🌐 Başlıkları Güncelle (EN/TR)</button>
+          <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:12px; padding:9px" onclick="clearAlerts()">🧹 Uyarıları Temizle</button>
+          <div style="font-size:11px; color:var(--t3); line-height:1.5;">“Devam” ve “İzleyeceğiz” listenizdeki diziler ile kişisel günlüğünüzde devam eden diziler takip edilir. Uygulama açıkken 3 saatte bir kontrol edilir.<br><br>Durum: <strong id="notifStatus" style="color:var(--t1)">Kapalı</strong></div>
         </div>
       </div>
       
@@ -298,6 +325,7 @@ img{display:block}
     <button class="tab"    id="tab-watched"   onclick="showTab('watched',this)">✓ İzledik <span class="bcount" id="cnt-watched">0</span></button>
     <button class="tab"    id="tab-watchlist" onclick="showTab('watchlist',this)">🎬 İzleyeceğiz <span class="bcount" id="cnt-watchlist">0</span></button>
     <button class="tab"    id="tab-ongoing"   onclick="showTab('ongoing',this)">▶ Devam <span class="bcount" id="cnt-ongoing">0</span></button>
+    <button class="tab"    id="tab-discover"  onclick="showTab('discover',this)">✨ Sana Özel <span class="bcount" id="cnt-discover">0</span></button>
     <button class="tab"    id="tab-suggest"   onclick="showTab('suggest',this)">💡 Öneriler <span class="bcount" id="cnt-suggest">0</span></button>
     <button class="tab"    id="tab-mylog"     onclick="showTab('mylog',this)">📓 İzledim <span class="bcount" id="cnt-mylog">0</span></button>
     <button class="tab"    id="tab-personal"  onclick="showTab('personal',this)">👤 Listem <span class="bcount" id="cnt-personal">0</span></button>
@@ -310,6 +338,9 @@ img{display:block}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </span>
         <input class="sinp" id="searchInput" placeholder="Film veya dizi ara…" oninput="onSearchInput(this.value)"/>
+      </div>
+      <div class="year-wrap">
+        <input class="inp yinp" id="searchYearInput" inputmode="numeric" maxlength="4" placeholder="Yıl" oninput="onYearInput(this.value)"/>
       </div>
       <div class="filter-row">
         <button class="pill on" id="stype-all"   onclick="setSType('all',this)">Hepsi</button>
@@ -418,6 +449,22 @@ img{display:block}
     <div id="ongoingList"></div>
   </div>
 
+  <div id="pane-discover" style="display:none" class="wrap">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle serif">Sana Özel Öneriler ✨</div>
+        <div class="seccnt" id="discoverSub">“İzledik” listenize göre hesaplanır</div>
+      </div>
+      <div class="filter-row">
+        <button class="pill on" id="dsf-all"  onclick="setDiscFilter('all',this)">Hepsi</button>
+        <button class="pill"    id="dsf-movie" onclick="setDiscFilter('movie',this)">Film</button>
+        <button class="pill"    id="dsf-tv"    onclick="setDiscFilter('tv',this)">Dizi</button>
+        <button class="pill"    onclick="buildDiscover(true)">🔄 Yenile</button>
+      </div>
+    </div>
+    <div id="discoverList"></div>
+  </div>
+
 </div><div id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-box">
     <div class="modal-hdr">
@@ -493,6 +540,10 @@ const TMDB_KEY  = '51e0d6b5776bdcb134ad7269ffcb0734';
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const IMG_BASE  = 'https://image.tmdb.org/t/p/w500';
 const ACCESS_PIN = '260222';
+// OMDb (IMDb puanlari icin) - https://www.omdbapi.com/apikey.aspx adresinden ucretsiz alinir.
+// Bos birakirsan IMDb rozetleri gizlenir, sadece TMDB puani gorunur.
+const OMDB_KEY  = '__OMDB_KEY__';
+const IMDB_ON   = !!OMDB_KEY && !OMDB_KEY.startsWith('__');
 
 const USERS = [
   { name: 'Fox', emoji: '🦊', color: 'var(--fox)', bgColor: 'rgba(126,184,212,.15)' },
@@ -518,7 +569,7 @@ let watchedQ='', watchlistQ='', suggestQ='', mylogQ='', personalQ='', ongoingQ='
 let personalView = 'me';
 let personalFilter = 'all';
 
-const ALL_TABS = ['search','watched','watchlist','ongoing','suggest','mylog','personal'];
+const ALL_TABS = ['search','watched','watchlist','ongoing','discover','suggest','mylog','personal'];
 
 function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
@@ -535,6 +586,106 @@ function getCachedPoster(titleKey){
   return c[titleKey] || null;
 }
 function posterCacheKey(title, year){ return (title||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,30) + '_' + (year||''); }
+
+// ════════════════════════════════════════════════════════════════
+// BAŞLIK YÖNETİMİ  (İngilizce (Türkçe) gösterimi)
+// ════════════════════════════════════════════════════════════════
+function nrm(t){ return (t||'').toLowerCase().replace(/[^a-z0-9ğüşıöç]/gi,''); }
+function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// TMDB ham sonucundan başlık alanlarını çıkarır
+function tmdbTitles(item){
+  return {
+    titleTr:   item.titleTr  || item.title || item.name || '',
+    titleEn:   item.titleEn  || '',
+    origTitle: item.origTitle|| item.original_title || item.original_name || '',
+    origLang:  item.origLang || item.original_language || '',
+    year:      item.year || (item.release_date||item.first_air_date||'').slice(0,4)
+  };
+}
+
+// Kural: yapım Türkçe ise sadece Türkçe. Değilse "İngilizce (Türkçe)".
+function dispParts(e){
+  const t = tmdbTitles(e);
+  const tr = t.titleTr, en = t.titleEn, ol = (t.origLang||'').toLowerCase();
+  if(ol === 'tr') return { main: t.origTitle || tr || en, alt: '' };
+  if(!en)                 return { main: tr, alt: '' };
+  if(!tr)                 return { main: en, alt: '' };
+  if(nrm(en) === nrm(tr)) return { main: en, alt: '' };
+  return { main: en, alt: tr };
+}
+function dispTitleText(e){ const p = dispParts(e); return p.alt ? p.main+' ('+p.alt+')' : p.main; }
+function dispTitleHtml(e){
+  const p = dispParts(e);
+  return esc(p.main) + (p.alt ? ' <span class="talt">('+esc(p.alt)+')</span>' : '');
+}
+
+// Arama için: TR + EN + orijinal başlıkların hepsi
+function hay(e){
+  const t = tmdbTitles(e);
+  return (t.titleTr+' '+t.titleEn+' '+t.origTitle+' '+(e.title||'')).toLowerCase();
+}
+// Liste içi arama: "legend 2015" gibi yıl içeren sorguları da anlar
+function matchQ(e, q){
+  if(!q) return true;
+  let year = '';
+  let text = q;
+  const m = q.match(/\b(19|20)\d{2}\b/);
+  if(m){ year = m[0]; text = (q.slice(0,m.index)+' '+q.slice(m.index+4)).trim(); }
+  if(year && String(e.year||'') !== year) return false;
+  if(!text) return true;
+  return hay(e).includes(text.toLowerCase());
+}
+
+// ════════════════════════════════════════════════════════════════
+// IMDb PUANI  (OMDb üzerinden, TMDB external_ids ile eşlenir)
+// ════════════════════════════════════════════════════════════════
+function imdbCache(){ return lsGet('cm_imdb_cache') || {}; }
+function imdbBadge(id, tv){
+  if(!IMDB_ON) return '';
+  if(!id || String(id).startsWith('lb_') || !/^\d+$/.test(String(id))) return '';
+  const k = (tv?'t':'m')+id;
+  const c = imdbCache()[k];
+  if(c && c.v) return '<span class="imdbb">IMDb '+c.v+'</span>';
+  if(c && c.v === null) return '';
+  return '<span class="imdbb imdb-pend" data-iid="'+id+'" data-itv="'+(tv?1:0)+'">IMDb …</span>';
+}
+let _imdbBusy = false;
+async function hydrateImdb(){
+  if(!IMDB_ON || _imdbBusy) return;
+  const nodes = Array.from(document.querySelectorAll('.imdb-pend')).slice(0,40);
+  if(!nodes.length) return;
+  _imdbBusy = true;
+  const cache = imdbCache();
+  const seen = {};
+  for(const n of nodes){
+    const id = n.dataset.iid, tv = n.dataset.itv === '1';
+    const k = (tv?'t':'m')+id;
+    n.classList.remove('imdb-pend');
+    if(seen[k] !== undefined){ applyImdb(n, seen[k]); continue; }
+    if(cache[k] && Date.now()-cache[k].ts < 14*864e5){ seen[k]=cache[k].v; applyImdb(n, cache[k].v); continue; }
+    let v = null;
+    try{
+      const ex = await fetch(`${TMDB_BASE}/${tv?'tv':'movie'}/${id}/external_ids?api_key=${TMDB_KEY}`).then(r=>r.json());
+      if(ex && ex.imdb_id){
+        const o = await fetch(`https://www.omdbapi.com/?i=${ex.imdb_id}&apikey=${OMDB_KEY}`).then(r=>r.json());
+        if(o && o.imdbRating && o.imdbRating !== 'N/A') v = o.imdbRating;
+      }
+    }catch(err){}
+    cache[k] = { v, ts: Date.now() };
+    seen[k] = v;
+    applyImdb(n, v);
+    await new Promise(r=>setTimeout(r,140));
+  }
+  lsSet('cm_imdb_cache', cache);
+  _imdbBusy = false;
+}
+function applyImdb(node, v){
+  if(v) node.textContent = 'IMDb '+v;
+  else node.remove();
+}
+function afterRender(){ setTimeout(hydrateImdb, 60); }
+
 
 const _ic = {}; let _ii = 0;
 function cacheItem(item){ const k='ic'+(++_ii); _ic[k]=item; return k; }
@@ -707,7 +858,10 @@ function startApp(){
   }
 
   setTimeout(fetchMissingPosters, 3000);
+  setTimeout(renderAlertBadge, 500);
+  setTimeout(refreshShowInfoSilently, 8000);
   setTimeout(()=>checkNewSeasons(false), 45000);
+  setInterval(()=>checkNewSeasons(false), 3*60*60*1000);
   
   setTimeout(()=>{
     const p = partner();
@@ -729,102 +883,203 @@ function startApp(){
   }, 100);
 }
 
-// ════ YENİ SEZON & BÖLÜM BİLDİRİMLERİ ══════════════════════════
+// ════════════════════════════════════════════════════════════════
+// YENİ SEZON & BÖLÜM UYARILARI
+// ════════════════════════════════════════════════════════════════
 let notifEnabled = lsGet('cm_notif_enabled') || false;
+
+function getAlerts(){ return lsGet('cm_alerts') || []; }
+function saveAlerts(a){ lsSet('cm_alerts', a.slice(0,40)); renderAlertBadge(); }
+function pushAlert(showId, title, msg, kind){
+  const a = getAlerts();
+  const dupe = a.find(x=>x.showId===showId && x.msg===msg);
+  if(dupe) return false;
+  a.unshift({ showId, title, msg, kind, ts:Date.now(), read:false });
+  saveAlerts(a);
+  return true;
+}
+function renderAlertBadge(){
+  const n = getAlerts().filter(a=>!a.read).length;
+  const b = document.getElementById('bellCount');
+  if(b){ b.textContent = n; b.style.display = n>0 ? 'flex' : 'none'; }
+  renderAlertList();
+}
+function renderAlertList(){
+  const el = document.getElementById('alertList');
+  if(!el) return;
+  const a = getAlerts();
+  if(!a.length){ el.innerHTML = '<div style="font-size:12px;color:var(--t3);padding:6px 0">Henüz bir uyarı yok.</div>'; return; }
+  el.innerHTML = a.slice(0,12).map(x=>`
+    <div class="alert-row ${x.read?'':'unread'}">
+      <div class="alert-msg">${esc(x.msg)}</div>
+      <div class="alert-ts">${new Date(x.ts).toLocaleDateString('tr-TR')}</div>
+    </div>`).join('');
+}
+function markAlertsRead(){
+  const a = getAlerts();
+  a.forEach(x=>x.read = true);
+  saveAlerts(a);
+}
+function clearAlerts(){ saveAlerts([]); showToast('🧹 Uyarılar temizlendi'); }
 
 function toggleNotifMenu(){
   const m = document.getElementById('notifMenu');
-  m.style.display = m.style.display==='none' ? 'block' : 'none';
+  const open = m.style.display==='none' || !m.style.display;
+  m.style.display = open ? 'block' : 'none';
+  if(open){ renderAlertList(); setTimeout(markAlertsRead, 1200); }
 }
 
 async function enableNotifications(){
   if(!('Notification' in window)){ showToast('⚠️ Tarayıcınız bildirimleri desteklemiyor'); return; }
   const perm = await Notification.requestPermission();
   if(perm==='granted'){
-    notifEnabled = true; 
+    notifEnabled = true;
     lsSet('cm_notif_enabled', true);
-    document.getElementById('notifStatus').textContent = 'Aktif (Açık)';
-    showToast('🔔 Bildirimler açıldı! Dizileriniz kontrol ediliyor...');
+    const st = document.getElementById('notifStatus');
+    if(st) st.textContent = 'Aktif (Açık)';
+    showToast('🔔 Bildirimler açıldı! Diziler kontrol ediliyor…');
     checkNewSeasons(true);
   } else {
     showToast('❌ Bildirim izni reddedildi');
   }
 }
 
+// ── Dizi bilgisi önbelleği (sezon sayısı, sıradaki bölüm, durum) ──
+function showInfoCache(){ return lsGet('cm_show_info') || {}; }
+function getShowInfo(id){ return showInfoCache()[String(id)] || null; }
+
+// "Devam" sekmesindeki + kişisel günlükte izlenmekte olan dizilerin TMDB id'leri
+function trackedShowIds(){
+  const out = {};
+  Object.values(sharedLib).forEach(e=>{
+    if(e.tv && (e.status==='ongoing' || e.status==='watchlist')){
+      const id = e.tmdbId || e.id;
+      if(id && /^\d+$/.test(String(id))) out[id] = { id:String(id), title: dispTitleText(e), where:e.status };
+    }
+  });
+  const log = getMyLog();
+  Object.values(log).forEach(e=>{
+    if(e.tv && e.myStatus==='watching'){
+      const id = e.tmdbId || (String(e.id||'').startsWith('lb_') ? null : e.id);
+      if(id && /^\d+$/.test(String(id)) && !out[id]) out[id] = { id:String(id), title: dispTitleText(e), where:'mylog' };
+    }
+  });
+  return out;
+}
+
+async function fetchShowInfo(id){
+  const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_KEY}&language=tr-TR`);
+  const d = await res.json();
+  return {
+    seasons:  d.number_of_seasons  || 0,
+    episodes: d.number_of_episodes || 0,
+    status:   d.status || '',
+    next:     d.next_episode_to_air ? {
+                s: d.next_episode_to_air.season_number,
+                e: d.next_episode_to_air.episode_number,
+                date: d.next_episode_to_air.air_date || '',
+                name: d.next_episode_to_air.name || ''
+              } : null,
+    last:     d.last_episode_to_air ? {
+                s: d.last_episode_to_air.season_number,
+                e: d.last_episode_to_air.episode_number,
+                date: d.last_episode_to_air.air_date || ''
+              } : null,
+    checkedAt: Date.now()
+  };
+}
+
+// Ana kontrol: yeni sezon / yeni bölüm / yaklaşan bölüm
 async function checkNewSeasons(force = false){
-  if(!notifEnabled && !force) return;
+  if(!force && !notifEnabled) return;
   const lastCheck = lsGet('cm_season_check') || 0;
-  
-  if(!force && Date.now() - lastCheck < 12*60*60*1000) return;
+  if(!force && Date.now() - lastCheck < 6*60*60*1000) return;
   lsSet('cm_season_check', Date.now());
 
-  const showsToCheck = {};
-
-  Object.values(sharedLib).forEach(e => {
-    if(e.status === 'ongoing' && e.tv && e.id && !e.id.startsWith('lb_')) {
-      showsToCheck[e.id] = { id: e.id, title: e.title };
-    }
-  });
-
-  const log = getMyLog();
-  Object.values(log).forEach(e => {
-    if(e.tv && e.myStatus === 'watching' && e.id) {
-      const tmdbId = e.tmdbId || (e.id.startsWith('lb_') ? null : e.id);
-      if(tmdbId && !showsToCheck[tmdbId]) {
-        showsToCheck[tmdbId] = { id: tmdbId, title: e.title };
-      }
-    }
-  });
-
-  const showIds = Object.keys(showsToCheck);
-  if(showIds.length === 0) {
-    if(force) showToast('Kontrol edilecek "Devam Eden" dizi bulunamadı.');
+  const shows = trackedShowIds();
+  const ids = Object.keys(shows);
+  if(!ids.length){
+    if(force) showToast('Takip edilecek dizi bulunamadı (Devam sekmesi boş).');
     return;
   }
+  if(force) showToast('🔄 ' + ids.length + ' dizi kontrol ediliyor…');
 
-  const knownData = lsGet('cm_known_shows') || {};
-  let updatesFound = 0;
+  const cache = showInfoCache();
+  let found = 0;
 
-  for(const id of showIds){
+  for(const id of ids){
     try {
-      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_KEY}&language=tr-TR`);
-      const data = await res.json();
+      const info = await fetchShowInfo(id);
+      const title = shows[id].title;
+      const prev = cache[id];
 
-      const currentSeasons = data.number_of_seasons || 0;
-      const currentEpisodes = data.number_of_episodes || 0;
-      const showTitle = showsToCheck[id].title;
-
-      if(!knownData[id]) {
-         knownData[id] = { seasons: currentSeasons, episodes: currentEpisodes };
-         continue; 
-      }
-
-      const known = knownData[id];
-      let notifyMsg = null;
-
-      if (currentSeasons > known.seasons) {
-         notifyMsg = `📺 "${showTitle}" için yeni sezon geldi! (Sezon ${currentSeasons})`;
-      } else if (currentEpisodes > known.episodes) {
-         notifyMsg = `📺 "${showTitle}" için yeni bölüm yayınlandı!`;
-      }
-
-      if (notifyMsg) {
-        showToast(`🔔 ${notifyMsg}`);
-        if(Notification.permission === 'granted'){
-          const n = new Notification('Seyir Defteri', { body: notifyMsg, icon: '/favicon.ico' });
-          n.onclick = () => { window.focus(); n.close(); };
+      if(prev){
+        let msg = null, kind = 'info';
+        if(info.seasons > prev.seasons){
+          msg = `🎉 "${title}" — ${info.seasons}. sezon yayında!`; kind = 'season';
+        } else if(info.episodes > prev.episodes){
+          const le = info.last ? ` (S${info.last.s}B${info.last.e})` : '';
+          msg = `📺 "${title}" — yeni bölüm çıktı${le}`; kind = 'episode';
+        } else if(info.next && (!prev.next || prev.next.date !== info.next.date)){
+          msg = `🗓️ "${title}" — sıradaki bölüm ${fmtDate(info.next.date)} (S${info.next.s}B${info.next.e})`; kind = 'upcoming';
         }
-        updatesFound++;
+        if(msg && pushAlert(id, title, msg, kind)){
+          found++;
+          showToast(msg);
+          if(Notification.permission === 'granted'){
+            try{
+              const n = new Notification('Seyir Defteri', { body: msg });
+              n.onclick = () => { window.focus(); n.close(); };
+            }catch(e){}
+          }
+        }
       }
-
-      knownData[id] = { seasons: currentSeasons, episodes: currentEpisodes };
+      cache[id] = info;
+      lsSet('cm_show_info', cache);
+      await new Promise(r=>setTimeout(r,180));
     } catch(e){}
   }
 
-  lsSet('cm_known_shows', knownData);
-  if (force && updatesFound === 0) {
-     showToast('Diziler güncel: Yeni bölüm veya sezon yok.');
+  renderAlertBadge();
+  if(activeTab()==='ongoing') renderOngoing();
+  if(force && found === 0) showToast('✅ Hepsi güncel — yeni sezon/bölüm yok.');
+}
+
+function fmtDate(d){
+  if(!d) return '';
+  try{ return new Date(d).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}); }
+  catch(e){ return d; }
+}
+function daysUntil(d){
+  if(!d) return null;
+  const diff = Math.ceil((new Date(d+'T00:00:00').getTime() - Date.now())/86400000);
+  return diff;
+}
+
+// Devam sekmesi için rozet
+function nextEpBadge(item){
+  const id = item.tmdbId || item.id;
+  const info = getShowInfo(id);
+  if(!info) return '';
+  if(info.next){
+    const d = daysUntil(info.next.date);
+    const when = d===0 ? 'bugün' : (d===1 ? 'yarın' : (d>0 ? d+' gün sonra' : fmtDate(info.next.date)));
+    return `<span class="nextep">🗓️ S${info.next.s}B${info.next.e} · ${when}</span>`;
   }
+  if(/Ended|Canceled/i.test(info.status||'')) return `<span class="nextep ended">🏁 Dizi bitti</span>`;
+  return `<span class="nextep idle">⏳ Tarih açıklanmadı</span>`;
+}
+
+// Arka planda bilgi tazele (uygulama açıldığında)
+async function refreshShowInfoSilently(){
+  const shows = trackedShowIds();
+  const cache = showInfoCache();
+  const stale = Object.keys(shows).filter(id=>!cache[id] || Date.now()-(cache[id].checkedAt||0) > 12*60*60*1000);
+  for(const id of stale.slice(0,25)){
+    try{ cache[id] = await fetchShowInfo(id); lsSet('cm_show_info', cache); }catch(e){}
+    await new Promise(r=>setTimeout(r,180));
+  }
+  if(activeTab()==='ongoing') renderOngoing();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -845,6 +1100,7 @@ function showTab(name, btn){
   if(name==='mylog')     renderMyLog();
   if(name==='personal')  renderPersonal();
   if(name==='ongoing')   renderOngoing();
+  if(name==='discover')  openDiscover();
 }
 
 function rerenderActive(){
@@ -855,6 +1111,7 @@ function rerenderActive(){
   if(t==='ongoing')   renderOngoing();
   if(t==='personal')  renderPersonal();
   if(t==='mylog')     renderMyLog();
+  if(t==='discover')  renderDiscover();
 }
 
 function updateHeader(){
@@ -880,6 +1137,8 @@ function updateCounts(){
   setCount('mylog',     my);
   setCount('personal',  pe);
   setCount('ongoing', _og);
+  const _dc = lsGet('cm_discover_'+(user?.name||''));
+  setCount('discover', _dc && _dc.items ? _dc.items.length : 0);
 
   if(user){
     document.getElementById('hdrStats').textContent = `${w+wl} içerik · ${w} izlendi`;
@@ -902,14 +1161,60 @@ function setSType(t, btn){
   const q = document.getElementById('searchInput').value.trim();
   if(q.length>1) doSearch(q);
 }
+let searchYear = '';
+function onYearInput(v){
+  searchYear = (v||'').replace(/\D/g,'').slice(0,4);
+  const q = document.getElementById('searchInput').value.trim();
+  if(q.length>1 && (searchYear.length===4 || searchYear.length===0)) doSearch(q);
+}
 async function doSearch(q){
   _lastQuery = q;
   try {
     const type = searchType==='movie'?'movie':searchType==='tv'?'tv':'multi';
-    const url = `${TMDB_BASE}/search/${type}?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&language=tr-TR&include_adult=false`;
-    const data = await fetch(url).then(r=>r.json());
-    let items = (data.results||[]).filter(i=>i.poster_path||(i.title||i.name));
+
+    // Sorgunun sonundaki yılı ayıkla:  "legend 2015"  →  query=legend, year=2015
+    let query = q, year = searchYear;
+    const m = q.match(/\s+(19|20)\d{2}\s*$/);
+    if(m){ year = q.slice(m.index).trim(); query = q.slice(0, m.index).trim(); }
+    if(!query) query = q;
+
+    let yp = '';
+    if(year && year.length===4){
+      if(type==='movie') yp = '&primary_release_year='+year;
+      else if(type==='tv') yp = '&first_air_date_year='+year;
+    }
+
+    const mk = lang => `${TMDB_BASE}/search/${type}?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=${lang}&include_adult=false${yp}`;
+    const [dTR, dEN] = await Promise.all([
+      fetch(mk('tr-TR')).then(r=>r.json()).catch(()=>({})),
+      fetch(mk('en-US')).then(r=>r.json()).catch(()=>({}))
+    ]);
+
+    const enMap = {};
+    (dEN.results||[]).forEach(r=>{ enMap[r.id] = r.title || r.name || ''; });
+
+    let items = (dTR.results||[]).slice();
+    // TR aramasında çıkmayıp EN aramasında çıkanları da ekle
+    (dEN.results||[]).forEach(r=>{ if(!items.find(x=>x.id===r.id)) items.push(r); });
+
+    items = items.filter(i=>i.poster_path||(i.title||i.name));
     if(searchType==='all') items = items.filter(i=>i.media_type==='movie'||i.media_type==='tv');
+
+    // Yıl filtresi (multi aramada TMDB desteklemiyor, burada süzüyoruz)
+    if(year && year.length===4){
+      items = items.filter(i=>((i.release_date||i.first_air_date||'').slice(0,4)===year));
+    }
+
+    // Başlık alanlarını zenginleştir
+    items.forEach(i=>{
+      i.titleTr   = i.title || i.name || '';
+      i.titleEn   = enMap[i.id] || '';
+      i.origTitle = i.original_title || i.original_name || '';
+      i.origLang  = i.original_language || '';
+    });
+
+    // Yıl verilmişse alakayı koru, yoksa popülerliğe göre
+    items.sort((a,b)=>(b.popularity||0)-(a.popularity||0));
     renderSearchGrid(items.slice(0,18));
   } catch(e){ console.error(e); }
 }
@@ -974,16 +1279,18 @@ function renderSearchGrid(items){
       ${poster}${badge}
       ${uicons?`<div class="card-uicons">${uicons}</div>`:''}
       <div class="cbody">
-        <div class="ctitle">${item.title||item.name||'—'}</div>
+        <div class="ctitle">${dispTitleHtml(item)}</div>
         <div class="cmeta">
           <span class="chip ${tv?'ctv':'cmovie'}">${tv?'Dizi':'Film'}</span>
           ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
           ${item.vote_average>0?`<span style="font-size:11px;color:var(--gold)">⭐${item.vote_average.toFixed(1)}</span>`:''}
+          ${imdbBadge(item.id, tv)}
         </div>
         <button class="btn bxs ${btnCls}" onclick="event.stopPropagation();openModal(getCached('${ck}'))">${btnTxt}</button>
       </div>
     </div>`;
   }).join('');
+  afterRender();
 }
 
 function filterWatched(q){ watchedQ=q.toLowerCase().trim(); renderWatched(); }
@@ -997,9 +1304,10 @@ function renderWatched(){
   const f = filters.watched;
   if(f==='movie') items = items.filter(e=>!e.tv);
   if(f==='tv')    items = items.filter(e=>!!e.tv);
-  if(watchedQ) items=items.filter(e=>(e.title||'').toLowerCase().includes(watchedQ));
+  if(watchedQ) items=items.filter(e=>matchQ(e,watchedQ));
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   document.getElementById('watchedCnt').textContent = items.length+' yapım';
+  afterRender();
   const el = document.getElementById('watchedList');
   if(!items.length){ el.innerHTML = emptyHtml('🎬','Henüz ortak film izlemedik','Aramadan birlikte izledik olarak ekleyin'); return; }
   el.innerHTML = items.map(e => {
@@ -1016,10 +1324,10 @@ function renderWatched(){
       ${poster}
       <div class="lbody" style="flex:1">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-          <div class="ltitle">${e.title}</div>
+          <div class="ltitle">${dispTitleHtml(e)}</div>
           <div style="display:flex;gap:3px;flex-shrink:0">${watcherIcons||(`<span style="font-size:15px">${emoji(e.addedBy||'Fox')}</span>`)}</div>
         </div>
-        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}</div>
         ${ratingHtml?`<div class="lratings">${ratingHtml}</div>`:''}
         <div class="lactions">
           <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Düzenle</button>
@@ -1035,9 +1343,10 @@ function renderWatchlist(){
   const f = filters.watchlist;
   if(f==='movie') items = items.filter(e=>!e.tv);
   if(f==='tv')    items = items.filter(e=>!!e.tv);
-  if(watchlistQ) items=items.filter(e=>(e.title||'').toLowerCase().includes(watchlistQ));
+  if(watchlistQ) items=items.filter(e=>matchQ(e,watchlistQ));
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   document.getElementById('watchlistCnt').textContent = items.length+' yapım';
+  afterRender();
   const el = document.getElementById('watchlistList');
   if(!items.length){ el.innerHTML = emptyHtml('🎬','İzleyecek listeniz boş','Aramadan birlikte izleyeceğiz olarak ekleyin'); return; }
   el.innerHTML = items.map(e => {
@@ -1052,10 +1361,10 @@ function renderWatchlist(){
       ${poster}
       <div class="lbody" style="flex:1">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-          <div class="ltitle">${e.title}</div>
+          <div class="ltitle">${dispTitleHtml(e)}</div>
           <div style="display:flex;gap:3px;flex-shrink:0">${wlIcons}</div>
         </div>
-        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}</div>
         <div class="lactions">
           <button class="btn bgreen bxs" onclick="markWatched('${e.id}')">✓ İzledik!</button>
           <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Düzenle</button>
@@ -1068,7 +1377,7 @@ function renderWatchlist(){
 
 function renderSuggestions(){
   const el = document.getElementById('suggestList');
-  const filteredSugs = suggestQ ? suggestions.filter(s=>(s.title||'').toLowerCase().includes(suggestQ)) : suggestions;
+  const filteredSugs = suggestQ ? suggestions.filter(s=>matchQ(s,suggestQ)) : suggestions;
   if(!filteredSugs.length){
     el.innerHTML = emptyHtml('💡','Henüz öneri yok','Aramadan "Öneri Olarak At" ile gönder');
     return;
@@ -1087,7 +1396,7 @@ function renderSuggestions(){
     return `<div class="lrow">
       ${poster}
       <div class="lbody">
-        <div class="ltitle">${sug.title}</div>
+        <div class="ltitle">${dispTitleHtml(sug)}</div>
         <div class="lmeta"><span class="chip ${sug.tv?'ctv':'cmovie'}">${sug.tv?'Dizi':'Film'}</span>${sug.year?`<span style="font-size:11px;color:var(--t3)">${sug.year}</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3);margin-bottom:4px">
           <span style="font-size:15px">${emoji(sug.suggestedBy||'Fox')}</span>
@@ -1140,10 +1449,11 @@ function renderMyLog(){
     return arr;
   };
   let filtered = doFilter(items);
-  if(mylogQ) filtered=filtered.filter(e=>(e.title||'').toLowerCase().includes(mylogQ));
+  if(mylogQ) filtered=filtered.filter(e=>matchQ(e,mylogQ));
   filtered=filtered.sort((a,b)=>(b.loggedAt||0)-(a.loggedAt||0));
   const el = document.getElementById('mylogList');
   document.getElementById('mylogSub').textContent = filtered.length+' film';
+  afterRender();
 
   if(!filtered.length){
     const msg = myLogView==='me' ? 'Henüz kayıt yok' : (p?p.name+' henüz bir şey eklememiş':'Partner bulunamadı');
@@ -1160,10 +1470,11 @@ function renderMyLog(){
     return `<div class="lrow">
       ${poster}
       <div class="lbody">
-        <div class="ltitle">${e.title}</div>
+        <div class="ltitle">${dispTitleHtml(e)}</div>
         <div class="lmeta">
           <span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>
           ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
+          ${imdbBadge(e.tmdbId||e.id, e.tv)}
           ${stars}
           ${dateStr?`<span style="font-size:11px;color:var(--t3)">${dateStr}</span>`:''}
           ${e.tv && e.myEpisode ? `<span style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbr);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">▶ ${e.myEpisode}</span>` : ''}
@@ -1185,8 +1496,11 @@ function addToMyLog(item, rating, note){
   const tv = !!(item.media_type==='tv'||(!!item.first_air_date&&!item.release_date));
   const yr = (item.release_date||item.first_air_date||'').slice(0,4);
   const log = getMyLog();
+  const t = tmdbTitles(item);
   const entry = {
     id, title: item.title||item.name||'—', year: yr,
+    titleTr:t.titleTr, titleEn:t.titleEn, origTitle:t.origTitle, origLang:t.origLang,
+    score: item.vote_average || 0, tmdbId: /^\d+$/.test(id) ? id : '',
     poster: item.poster_path||'', tv, rating: rating||0,
     note: note||'', loggedAt: Date.now()
   };
@@ -1249,7 +1563,7 @@ function renderOngoing(){
   const el = document.getElementById('ongoingList');
   if(!el) return;
   let items = Object.values(sharedLib).filter(e=>e.status==='ongoing');
-  if(ongoingQ) items = items.filter(e=>(e.title||'').toLowerCase().includes(ongoingQ));
+  if(ongoingQ) items = items.filter(e=>matchQ(e,ongoingQ));
   items.sort((a,b)=>(b.updatedAt||b.addedAt||0)-(a.updatedAt||a.addedAt||0));
   const sub = document.getElementById('ongoingSub');
   if(sub) sub.textContent = items.length + ' dizi/film';
@@ -1268,11 +1582,12 @@ function renderOngoing(){
     return `<div class="lrow">
       ${poster}
       <div class="lbody">
-        <div class="ltitle">${item.title||'—'}</div>
+        <div class="ltitle">${dispTitleHtml(item)}</div>
         <div class="lmeta">
           <span class="chip ${item.tv?'ctv':'cmovie'}">${item.tv?'Dizi':'Film'}</span>
           ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
           ${epBadge}
+          ${nextEpBadge(item)}
         </div>
         ${rFox||rBun ? `<div style="font-size:11px;color:var(--gold);margin:4px 0">${rFox} ${rBun}</div>` : ''}
         <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
@@ -1516,7 +1831,7 @@ function renderPersonal(){
   let items = Object.values(sourceLib);
   if(personalFilter==='movie') items = items.filter(e=>!e.tv);
   if(personalFilter==='tv')    items = items.filter(e=>!!e.tv);
-  if(personalQ) items=items.filter(e=>(e.title||'').toLowerCase().includes(personalQ));
+  if(personalQ) items=items.filter(e=>matchQ(e,personalQ));
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   document.getElementById('personalSub').textContent = items.length+' içerik';
   const el = document.getElementById('personalList');
@@ -1534,7 +1849,7 @@ function renderPersonal(){
     return `<div class="lrow">
       ${poster}
       <div class="lbody">
-        <div class="ltitle">${e.title||'—'}</div>
+        <div class="ltitle">${dispTitleHtml(e)}</div>
         <div class="lmeta">
           <span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>
           ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
@@ -1597,12 +1912,14 @@ function openModal(item){
   if(item.poster_path && item.poster_path !== 'N/A') mp.innerHTML = `<img class="modal-poster" src="${IMG_BASE}${item.poster_path}" alt=""/>`;
   else mp.innerHTML = `<div class="modal-poster-ph">${tv?'📺':'🎬'}</div>`;
 
-  document.getElementById('mTitle').textContent = item.title||item.name||'—';
+  document.getElementById('mTitle').innerHTML = dispTitleHtml(item);
   document.getElementById('mMeta').innerHTML = `
     <span class="chip ${tv?'ctv':'cmovie'}">${tv?'Dizi':'Film'}</span>
     ${yr?`<span style="font-size:12px;color:var(--t3)">${yr}</span>`:''}
-    ${item.vote_average>0?`<span style="font-size:12px;color:var(--gold)">⭐${item.vote_average?.toFixed(1)}</span>`:''}
+    ${item.vote_average>0?`<span style="font-size:12px;color:var(--gold)">⭐ TMDB ${item.vote_average?.toFixed(1)}</span>`:''}
+    ${imdbBadge(item.tmdbId||item.id, tv)}
   `;
+  afterRender();
   document.getElementById('mOverview').textContent = item.overview||'';
   document.getElementById('noteInput').value = '';
   document.getElementById('ratingSection').style.display = 'none';
@@ -1684,8 +2001,11 @@ async function saveItem(){
   const id = String(item.id||'');
   const tv = !!(item.media_type==='tv'||(!!item.first_air_date&&!item.release_date));
   const yr = (item.release_date||item.first_air_date||'').slice(0,4);
+  const t = tmdbTitles(item);
   const base = {
     id, title:item.title||item.name||'—', year:yr,
+    titleTr:t.titleTr, titleEn:t.titleEn, origTitle:t.origTitle, origLang:t.origLang,
+    score: item.vote_average || 0, tmdbId: /^\d+$/.test(id) ? id : '',
     poster:item.poster_path||'', tv, raw:JSON.stringify(item),
     addedBy:user.name, addedAt:Date.now()
   };
@@ -1749,7 +2069,7 @@ async function markWatched(id){
   currentItem = item.raw?JSON.parse(item.raw):item;
   currentDest = 'shared-watched';
   currentRating = 0;
-  document.getElementById('mTitle').textContent = item.title;
+  document.getElementById('mTitle').innerHTML = dispTitleHtml(item);
   document.getElementById('mPoster').innerHTML = item.poster && item.poster !== 'N/A'
     ? `<img class="modal-poster" src="${IMG_BASE}${item.poster}" alt=""/>`
     : `<div class="modal-poster-ph">${item.tv?'📺':'🎬'}</div>`;
@@ -2033,6 +2353,300 @@ function fetchMissingPosters(){
   const missingPer = Object.keys(personalLib).filter(k=>personalLib[k].fromLetterboxd&&!personalLib[k].poster);
   if(missingLog.length) fetchPostersForLog(missingLog);
   if(missingPer.length) setTimeout(()=>fetchPostersForPersonal(missingPer), 3000);
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// ✨ SANA ÖZEL — "İzledik" listesine göre öneri motoru
+// ════════════════════════════════════════════════════════════════
+let discFilter = 'all';
+let discData   = null;   // { ts, items:[...] }
+let discBusy   = false;
+
+function setDiscFilter(f, btn){
+  discFilter = f;
+  document.querySelectorAll('#pane-discover .pill').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  renderDiscover();
+}
+
+function openDiscover(){
+  discData = discData || lsGet('cm_discover_'+(user?.name||''));
+  if(!discData || !discData.items || Date.now()-discData.ts > 24*60*60*1000) buildDiscover(false);
+  else renderDiscover();
+}
+
+// Kişisel listelerde/günlüklerde arama yapmak için normalize edilmiş dizin
+function personalIndex(){
+  const idx = { ids:{}, keys:{} };
+  const add = (lib, who) => {
+    Object.values(lib||{}).forEach(e=>{
+      const tid = e.tmdbId || e.id;
+      if(tid) idx.ids[String(tid)] = who;
+      const k = nrm(e.titleEn||'') + '|' + (e.year||'');
+      const k2 = nrm(e.titleTr||e.title||'') + '|' + (e.year||'');
+      if(k.length>2)  idx.keys[k]  = who;
+      if(k2.length>2) idx.keys[k2] = who;
+    });
+  };
+  const p = partner();
+  add(personalLib,     user?.name || 'Sen');
+  add(partnerPersonal, p ? p.name : 'Partner');
+  return idx;
+}
+
+function inSharedAlready(id){
+  if(sharedLib[id]) return true;
+  return !!Object.values(sharedLib).find(e=>String(e.tmdbId||e.id)===String(id));
+}
+
+async function buildDiscover(force){
+  if(discBusy) return;
+  const el = document.getElementById('discoverList');
+  const cached = lsGet('cm_discover_'+(user?.name||''));
+  if(!force && cached && Date.now()-cached.ts < 24*60*60*1000){
+    discData = cached; renderDiscover(); return;
+  }
+
+  // Tohum: birlikte izlenenler (en yeni 14 tanesi) + "devam" listesindekiler
+  let seeds = Object.values(sharedLib)
+    .filter(e=>(e.status==='watched'||e.status==='ongoing') && /^\d+$/.test(String(e.tmdbId||e.id)))
+    .sort((a,b)=>(b.addedAt||0)-(a.addedAt||0))
+    .slice(0,14);
+
+  if(!seeds.length){
+    if(el) el.innerHTML = emptyHtml('✨','Önce birkaç yapım izleyin','“İzledik” sekmesine ekledikçe buraya öneriler düşer');
+    setCount('discover', 0);
+    return;
+  }
+
+  discBusy = true;
+  if(el) el.innerHTML = '<div class="empty"><div class="eico">⏳</div><div class="etxt">Öneriler hazırlanıyor…</div><div class="esub">'+seeds.length+' yapım analiz ediliyor</div></div>';
+
+  const pool = {};   // tmdbId -> {item, score, reasons:[]}
+  const genreScore = {};
+
+  // Tohumların türlerinden zevk profili çıkar
+  seeds.forEach(sd=>{
+    try{
+      const raw = sd.raw ? JSON.parse(sd.raw) : null;
+      (raw && raw.genre_ids || []).forEach(g=>{ genreScore[g] = (genreScore[g]||0)+1; });
+    }catch(e){}
+  });
+
+  for(const sd of seeds){
+    const id = sd.tmdbId || sd.id;
+    const kind = sd.tv ? 'tv' : 'movie';
+    for(const path of ['recommendations','similar']){
+      try{
+        const [rTR, rEN] = await Promise.all([
+          fetch(`${TMDB_BASE}/${kind}/${id}/${path}?api_key=${TMDB_KEY}&language=tr-TR&page=1`).then(r=>r.json()),
+          fetch(`${TMDB_BASE}/${kind}/${id}/${path}?api_key=${TMDB_KEY}&language=en-US&page=1`).then(r=>r.json())
+        ]);
+        const enMap = {};
+        (rEN.results||[]).forEach(x=>{ enMap[x.id] = x.title||x.name||''; });
+        (rTR.results||[]).slice(0,12).forEach((x, i)=>{
+          if(!x.poster_path) return;
+          const key = String(x.id);
+          if(inSharedAlready(key)) return;
+          x.media_type = kind;
+          x.titleTr   = x.title||x.name||'';
+          x.titleEn   = enMap[x.id] || '';
+          x.origTitle = x.original_title||x.original_name||'';
+          x.origLang  = x.original_language||'';
+          let w = (path==='recommendations' ? 3 : 1.6) * (1 - i*0.045);
+          (x.genre_ids||[]).forEach(g=>{ if(genreScore[g]) w += Math.min(genreScore[g],4)*0.22; });
+          w += Math.max(0,(x.vote_average||0)-6) * 0.25;
+          if((x.vote_count||0) < 60) w -= 1.2;
+          if(!pool[key]) pool[key] = { item:x, score:0, reasons:[] };
+          pool[key].score += w;
+          const rt = dispTitleText(sd);
+          if(pool[key].reasons.length < 3 && !pool[key].reasons.includes(rt)) pool[key].reasons.push(rt);
+        });
+      }catch(e){}
+      await new Promise(r=>setTimeout(r,120));
+    }
+  }
+
+  const idx = personalIndex();
+  const items = Object.keys(pool).map(k=>{
+    const o = pool[k];
+    const t = tmdbTitles(o.item);
+    const kEn = nrm(t.titleEn)+'|'+t.year;
+    const kTr = nrm(t.titleTr)+'|'+t.year;
+    const owner = idx.ids[k] || idx.keys[kEn] || idx.keys[kTr] || null;
+    return {
+      id: k, item: o.item, reasons: o.reasons,
+      score: o.score + (owner ? 6 : 0),   // listede duranlar öne çıksın
+      owner
+    };
+  }).sort((a,b)=>b.score-a.score).slice(0,60);
+
+  discData = { ts: Date.now(), items: items.map(x=>({
+    id:x.id, owner:x.owner, reasons:x.reasons, score:Math.round(x.score*10)/10, item:x.item
+  })) };
+  lsSet('cm_discover_'+(user?.name||''), discData);
+  discBusy = false;
+  renderDiscover();
+  showToast('✨ ' + discData.items.length + ' öneri hazırlandı!');
+}
+
+function renderDiscover(){
+  const el = document.getElementById('discoverList');
+  if(!el) return;
+  if(!discData || !discData.items){ el.innerHTML = emptyHtml('✨','Öneri yok','🔄 Yenile ile tekrar deneyin'); return; }
+
+  let list = discData.items.slice();
+  if(discFilter==='movie') list = list.filter(x=>x.item.media_type!=='tv');
+  if(discFilter==='tv')    list = list.filter(x=>x.item.media_type==='tv');
+
+  setCount('discover', discData.items.length);
+  const sub = document.getElementById('discoverSub');
+  if(sub) sub.textContent = list.length + ' öneri · ' + new Date(discData.ts).toLocaleDateString('tr-TR') + ' tarihinde hesaplandı';
+
+  if(!list.length){ el.innerHTML = emptyHtml('✨','Bu filtrede öneri yok',''); return; }
+
+  const inList = list.filter(x=>x.owner);
+  const fresh  = list.filter(x=>!x.owner);
+
+  const card = x => {
+    const it = x.item;
+    const tv = it.media_type==='tv';
+    const yr = (it.release_date||it.first_air_date||'').slice(0,4);
+    const ck = cacheItem(it);
+    const poster = it.poster_path
+      ? `<img class="limg" src="${IMG_BASE}${it.poster_path}" loading="lazy" alt=""/>`
+      : `<div class="lph">${tv?'📺':'🎬'}</div>`;
+    const why = x.reasons.length
+      ? `<div class="lnote">Çünkü <strong style="color:var(--t2)">${esc(x.reasons.join(', '))}</strong> izlediniz</div>` : '';
+    const own = x.owner
+      ? `<div class="own-tag">📋 ${esc(x.owner)} listesinde duruyor</div>` : '';
+    return `<div class="lrow">
+      ${poster}
+      <div class="lbody">
+        <div class="ltitle">${dispTitleHtml(it)}</div>
+        <div class="lmeta">
+          <span class="chip ${tv?'ctv':'cmovie'}">${tv?'Dizi':'Film'}</span>
+          ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
+          ${it.vote_average>0?`<span style="font-size:11px;color:var(--gold)">⭐${it.vote_average.toFixed(1)}</span>`:''}
+          ${imdbBadge(it.id, tv)}
+        </div>
+        ${own}
+        ${why}
+        <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
+          <button class="btn bblue bxs"  onclick="discQuick('${ck}','watchlist')">🎬 İzleyeceğiz</button>
+          <button class="btn bghost bxs" onclick="discQuick('${ck}','personal')">👤 Listeme</button>
+          <button class="btn bgold bxs"  onclick="discQuick('${ck}','suggest')">💡 Öner</button>
+          <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Detay</button>
+        </div>
+      </div>
+    </div>`;
+  };
+
+  let html = '';
+  if(inList.length){
+    html += `<div class="disc-head">📋 Listelerinizde duranlar <span>${inList.length}</span></div>` + inList.map(card).join('');
+  }
+  if(fresh.length){
+    html += `<div class="disc-head">🆕 Hiç listelerde olmayanlar <span>${fresh.length}</span></div>` + fresh.map(card).join('');
+  }
+  el.innerHTML = html;
+  afterRender();
+}
+
+async function discQuick(ck, dest){
+  const item = getCached(ck);
+  if(!item) return;
+  const id = String(item.id);
+  const tv = item.media_type==='tv';
+  const yr = (item.release_date||item.first_air_date||'').slice(0,4);
+  const t = tmdbTitles(item);
+  const base = {
+    id, title:item.title||item.name||'—', year:yr,
+    titleTr:t.titleTr, titleEn:t.titleEn, origTitle:t.origTitle, origLang:t.origLang,
+    score:item.vote_average||0, tmdbId:id,
+    poster:item.poster_path||'', tv, raw:JSON.stringify(item),
+    addedBy:user.name, addedAt:Date.now()
+  };
+  try{
+    if(dest==='watchlist'){
+      if(!db){ showToast('❌ Firebase bağlantısı yok'); return; }
+      await db.ref('sharedLib/'+id).set(Object.assign({}, base, {status:'watchlist', ratings:{}, notes:{}, wantedBy:[user.name]}));
+      showToast('🎬 İzleyeceğiz listesine eklendi!');
+    } else if(dest==='personal'){
+      personalLib[id] = Object.assign({}, base, {note:'', status:'personal'});
+      savePersonal();
+      showToast('👤 Listenize eklendi!');
+    } else if(dest==='suggest'){
+      if(!db){ showToast('❌ Firebase bağlantısı yok'); return; }
+      await db.ref('suggestions/sug_'+Date.now()).set(Object.assign({}, base, {suggestedBy:user.name, note:'', ts:Date.now()}));
+      showToast('💡 Öneri gönderildi!');
+    }
+    discData.items = discData.items.filter(x=>x.id!==id);
+    lsSet('cm_discover_'+(user?.name||''), discData);
+    renderDiscover();
+  }catch(e){ showToast('❌ '+String(e.message||e).slice(0,60)); }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 🌐 ESKİ KAYITLARIN İNGİLİZCE/TÜRKÇE BAŞLIKLARINI DOLDUR
+// ════════════════════════════════════════════════════════════════
+let titleSyncBusy = false;
+async function syncTitles(){
+  if(titleSyncBusy){ showToast('⏳ Zaten çalışıyor…'); return; }
+  titleSyncBusy = true;
+
+  const jobs = [];
+  Object.values(sharedLib).forEach(e=>{
+    const id = e.tmdbId || e.id;
+    if(!e.titleEn && /^\d+$/.test(String(id))) jobs.push({ src:'shared', key:e.id, id:String(id), tv:!!e.tv });
+  });
+  const log = getMyLog();
+  Object.keys(log).forEach(k=>{
+    const e = log[k]; const id = e.tmdbId || e.id;
+    if(!e.titleEn && /^\d+$/.test(String(id))) jobs.push({ src:'mylog', key:k, id:String(id), tv:!!e.tv });
+  });
+  Object.keys(personalLib).forEach(k=>{
+    const e = personalLib[k]; const id = e.tmdbId || e.id;
+    if(!e.titleEn && /^\d+$/.test(String(id))) jobs.push({ src:'personal', key:k, id:String(id), tv:!!e.tv });
+  });
+
+  if(!jobs.length){ titleSyncBusy=false; showToast('✅ Tüm başlıklar zaten güncel'); return; }
+  showToast('🌐 '+jobs.length+' kayıt güncelleniyor…');
+
+  let done = 0;
+  for(const j of jobs.slice(0,200)){
+    try{
+      const kind = j.tv ? 'tv' : 'movie';
+      const [tr, en] = await Promise.all([
+        fetch(`${TMDB_BASE}/${kind}/${j.id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json()),
+        fetch(`${TMDB_BASE}/${kind}/${j.id}?api_key=${TMDB_KEY}&language=en-US`).then(r=>r.json())
+      ]);
+      if(tr.status_code || en.status_code) continue;
+      const patch = {
+        titleTr:   tr.title || tr.name || '',
+        titleEn:   en.title || en.name || '',
+        origTitle: en.original_title || en.original_name || '',
+        origLang:  en.original_language || '',
+        tmdbId:    j.id,
+        score:     en.vote_average || 0
+      };
+      if(j.src==='shared' && db){
+        await db.ref('sharedLib/'+j.key).update(patch);
+      } else if(j.src==='mylog'){
+        const l = getMyLog();
+        if(l[j.key]){ Object.assign(l[j.key], patch); saveMyLog(l); }
+      } else if(j.src==='personal'){
+        if(personalLib[j.key]){ Object.assign(personalLib[j.key], patch); savePersonal(); }
+      }
+      done++;
+      if(done % 15 === 0) showToast('🌐 '+done+'/'+jobs.length+' güncellendi…');
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,160));
+  }
+  titleSyncBusy = false;
+  rerenderActive();
+  showToast('✅ '+done+' başlık güncellendi!');
 }
 
 function emptyHtml(ico, txt, sub){
