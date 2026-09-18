@@ -237,6 +237,25 @@ img{display:block}
 .disc-head span{background:var(--s3);color:var(--t2);border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700;letter-spacing:0}
 .own-tag{display:inline-block;background:rgba(180,139,232,.14);color:var(--bun,#b48be8);border:1px solid rgba(180,139,232,.35);
   border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;margin:4px 0}
+.recap-box{background:linear-gradient(165deg,var(--surface),var(--s2));border:1px solid var(--s3);border-radius:22px;
+  padding:30px 26px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.recap-close{position:absolute;top:14px;right:14px;background:var(--s3);border:none;color:var(--t2);width:30px;height:30px;
+  border-radius:50%;cursor:pointer;font-size:14px;line-height:1}
+.recap-close:hover{background:var(--s3);opacity:.8}
+.recap-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--t1);text-align:center;margin-bottom:2px}
+.recap-sub{text-align:center;color:var(--t3);font-size:12px;margin-bottom:22px}
+.recap-block{background:var(--s2);border-radius:16px;padding:16px 18px;margin-bottom:14px;border:1px solid var(--s3)}
+.recap-block-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.recap-block-title{font-weight:800;font-size:14px;color:var(--t1)}
+.recap-block-count{font-size:20px;font-weight:800;color:var(--gold)}
+.recap-block-sub{font-size:11px;color:var(--t3);margin-top:-6px;margin-bottom:10px}
+.recap-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.recap-bar-lbl{font-size:11px;color:var(--t2);width:78px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recap-bar-track{flex:1;height:7px;background:var(--s3);border-radius:4px;overflow:hidden}
+.recap-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),#f0d67a);border-radius:4px}
+.recap-bar-n{font-size:10px;color:var(--t3);width:16px;text-align:right;flex-shrink:0}
+.recap-top{font-size:11.5px;color:var(--t2);margin-top:8px;padding-top:8px;border-top:1px dashed var(--s3)}
+.recap-empty{font-size:12px;color:var(--t3);padding:6px 0}
 .prov-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:0}
 .prov-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px}
 .prov-logo{width:26px;height:26px;border-radius:6px;object-fit:cover;border:1px solid var(--s3)}
@@ -324,6 +343,8 @@ img{display:block}
           <div id="alertList" style="max-height:200px; overflow-y:auto; margin-bottom:12px"></div>
           <button class="btn bgold" style="width:100%; justify-content:center; margin-bottom:8px; padding:9px" onclick="enableNotifications()">🔔 Bildirimleri Aç</button>
           <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:8px; padding:9px" onclick="checkNewSeasons(true)">🔄 Şimdi Kontrol Et</button>
+          <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:8px; padding:9px" onclick="toggleNotifMenu();(()=>{const n=new Date();showRecap('month',n.getFullYear(),n.getMonth());})()">📅 Bu Ayın Özeti</button>
+          <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:8px; padding:9px" onclick="toggleNotifMenu();(()=>{const n=new Date();showRecap('year',n.getFullYear(),0);})()">🎉 Bu Yılın Özeti</button>
           <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:8px; padding:9px" onclick="syncTitles()">🌐 Başlıkları Güncelle (EN/TR)</button>
           <button class="btn bghost" style="width:100%; justify-content:center; margin-bottom:12px; padding:9px" onclick="clearAlerts()">🧹 Uyarıları Temizle</button>
           <div style="font-size:11px; color:var(--t3); line-height:1.5;">“Devam” ve “İzleyeceğiz” listenizdeki diziler ile kişisel günlüğünüzde devam eden diziler takip edilir. Uygulama açıkken 3 saatte bir kontrol edilir.<br><br>Durum: <strong id="notifStatus" style="color:var(--t1)">Kapalı</strong></div>
@@ -515,6 +536,13 @@ img{display:block}
   </div>
 </div>
 
+<div id="recapModal" onclick="if(event.target===this)closeRecap()" style="display:none;position:fixed;inset:0;z-index:6500;align-items:center;justify-content:center;background:rgba(0,0,0,.8);padding:20px">
+  <div class="recap-box">
+    <button class="recap-close" onclick="closeRecap()">✕</button>
+    <div id="recapContent"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 
@@ -633,8 +661,10 @@ function isLatinText(t){
 }
 
 // KURAL:
-//  • Orijinal dil Latin alfabesindeyse (İngilizce, Almanca, Fransızca, Türkçe…) → ORİJİNAL ad
+//  • Orijinal dil Latin alfabesindeyse (İngilizce, Almanca, Fransızca, Türkçe…) → sadece ORİJİNAL ad
 //  • Latin dışı bir alfabedeyse (Japonca, Çince, Korece, Rusça…)              → İngilizce (Türkçe)
+//    Türkçe adı henüz bilinmiyorsa "pending" işaretlenir; ekranda görününce
+//    arka planda TMDB'den çekilip parantez sonradan eklenir (bkz. hydrateAltTitles).
 function dispParts(e){
   const t  = tmdbTitles(e);
   const tr = t.titleTr, en = t.titleEn, orig = t.origTitle;
@@ -643,18 +673,27 @@ function dispParts(e){
   const latin = ol ? LATIN_LANGS.has(ol) : isLatinText(orig || en || tr);
   if(latin){
     const main = (orig && isLatinText(orig)) ? orig : (en || tr || orig);
-    return { main: main || '—', alt: '' };
+    return { main: main || '—', alt: '', pending:false };
   }
   // Latin dışı: İngilizce ana, Türkçe parantezde
-  if(!en)                 return { main: tr || orig || '—', alt: '' };
-  if(!tr)                 return { main: en, alt: '' };
-  if(nrm(en) === nrm(tr)) return { main: en, alt: '' };
-  return { main: en, alt: tr };
+  const main = isLatinText(en) ? (en || tr || orig) : (isLatinText(tr) ? tr : (isLatinText(orig) ? orig : (en||tr||orig)));
+  if(!main) return { main: orig || '—', alt:'', pending:false };
+  if(!tr)                    return { main, alt:'', pending: isLatinText(main) };  // TR henüz gelmedi → sonradan doldurulacak
+  if(nrm(main) === nrm(tr))  return { main, alt:'', pending:false };               // zaten aynıysa parantez gereksiz
+  return { main, alt: tr, pending:false };
 }
 function dispTitleText(e){ const p = dispParts(e); return p.alt ? p.main+' ('+p.alt+')' : p.main; }
 function dispTitleHtml(e){
   const p = dispParts(e);
-  return esc(p.main) + (p.alt ? ' <span class="talt">('+esc(p.alt)+')</span>' : '');
+  if(p.alt) return esc(p.main) + ' <span class="talt">('+esc(p.alt)+')</span>';
+  if(p.pending){
+    const id = e.tmdbId || e.id;
+    const tv = !!(e.tv || e.media_type==='tv' || (!!e.first_air_date && !e.release_date));
+    if(id && /^\d+$/.test(String(id))){
+      return esc(p.main) + ` <span class="talt title-pending" data-tid="${id}" data-ttv="${tv?1:0}" data-main="${esc(p.main)}"></span>`;
+    }
+  }
+  return esc(p.main);
 }
 
 // Arama için: TR + EN + orijinal başlıkların hepsi
@@ -721,7 +760,37 @@ function applyImdb(node, v){
   if(v) node.textContent = 'IMDb '+v;
   else node.remove();
 }
-function afterRender(){ setTimeout(hydrateImdb, 60); setTimeout(hydrateTitles, 900); }
+function afterRender(){ setTimeout(hydrateImdb, 60); setTimeout(hydrateAltTitles, 90); setTimeout(hydrateTitles, 900); }
+
+// Ekranda "İngilizce (…)" parantezi bekleyen başlıkları arka planda TMDB'den çekip doldurur
+function trTitleCache(){ return lsGet('cm_tr_title_cache') || {}; }
+let _altBusy = false;
+async function hydrateAltTitles(){
+  if(_altBusy) return;
+  const nodes = Array.from(document.querySelectorAll('.title-pending')).slice(0,25);
+  if(!nodes.length) return;
+  _altBusy = true;
+  const cache = trTitleCache();
+  for(const n of nodes){
+    const id = n.dataset.tid, tv = n.dataset.ttv==='1', main = n.dataset.main||'';
+    n.classList.remove('title-pending');
+    const key = (tv?'t':'m')+id;
+    let trTitle = cache[key];
+    if(trTitle === undefined){
+      try{
+        const d = await fetch(`${TMDB_BASE}/${tv?'tv':'movie'}/${id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json());
+        trTitle = (d && (d.title||d.name)) || null;
+      }catch(e){ trTitle = null; }
+      cache[key] = trTitle;
+      lsSet('cm_tr_title_cache', cache);
+      await new Promise(r=>setTimeout(r,110));
+    }
+    if(trTitle && nrm(trTitle) !== nrm(main)) n.textContent = ' ('+trTitle+')';
+    else n.remove();
+  }
+  _altBusy = false;
+  if(document.querySelectorAll('.title-pending').length) setTimeout(hydrateAltTitles, 500);
+}
 
 // Bir kaydın başlık bilgisi eksik mi?
 function titleNeedsFix(e){
@@ -993,6 +1062,7 @@ function startApp(){
 
   setTimeout(fetchMissingPosters, 3000);
   setTimeout(renderAlertBadge, 500);
+  setTimeout(checkAutoRecap, 5000);
   setTimeout(refreshShowInfoSilently, 8000);
   setTimeout(()=>checkNewSeasons(false), 45000);
   setInterval(()=>checkNewSeasons(false), 3*60*60*1000);
@@ -1055,6 +1125,128 @@ function markAlertsRead(){
   saveAlerts(a);
 }
 function clearAlerts(){ saveAlerts([]); showToast('🧹 Uyarılar temizlendi'); }
+
+// ════════════════════════════════════════════════════════════════
+// 📅 AY SONU / 🎉 YIL SONU ÖZETİ
+// ════════════════════════════════════════════════════════════════
+const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+function periodRange(type, y, m){
+  if(type==='month') return [ new Date(y, m, 1).getTime(), new Date(y, m+1, 1).getTime() ];
+  return [ new Date(y, 0, 1).getTime(), new Date(y+1, 0, 1).getTime() ];
+}
+function extractGenres(raw){
+  try{ return (JSON.parse(raw).genre_ids) || []; }catch(e){ return []; }
+}
+function avgRatingOf(e){
+  const rs = Object.values(e.ratings||{}).filter(r=>r>0);
+  return rs.length ? rs.reduce((a,b)=>a+b,0)/rs.length : (e.rating||0);
+}
+function tallyRecap(items){
+  let movie=0, tv=0; const g = {};
+  items.forEach(it=>{
+    if(it.tv) tv++; else movie++;
+    (it.genres||[]).forEach(id=>{ g[id] = (g[id]||0)+1; });
+  });
+  return { movie, tv, total: movie+tv, g };
+}
+function computeRecap(type, y, m){
+  const [start, end] = periodRange(type, y, m);
+  const inRange = (ts) => ts >= start && ts < end;
+
+  const together = Object.values(sharedLib)
+    .filter(e => e.status==='watched' && inRange(e.addedAt||0))
+    .map(e => ({ tv:!!e.tv, genres:extractGenres(e.raw), title:dispTitleText(e), rating:avgRatingOf(e) }));
+
+  const mineRaw = Object.values(getMyLog())
+    .filter(e => inRange(e.loggedAt||0))
+    .map(e => ({ tv:!!e.tv, genres:extractGenres(e.raw), title:dispTitleText(e), rating:e.rating||0 }));
+
+  const theirsRaw = Object.values(partnerLog||{})
+    .filter(e => inRange(e.loggedAt||0))
+    .map(e => ({ tv:!!e.tv, genres:extractGenres(e.raw), title:dispTitleText(e), rating:e.rating||0 }));
+
+  const topOf = arr => arr.slice().sort((a,b)=>(b.rating||0)-(a.rating||0)).find(x=>x.rating>0) || null;
+  const p = partner();
+
+  return {
+    type, y, m,
+    together: Object.assign(tallyRecap(together), { top: topOf(together) }),
+    mine:     Object.assign(tallyRecap(mineRaw),   { top: topOf(mineRaw),   name: user?.name || 'Sen' }),
+    theirs:   Object.assign(tallyRecap(theirsRaw), { top: topOf(theirsRaw), name: p ? p.name : 'Partner' })
+  };
+}
+
+function genreBarsHtml(g){
+  const entries = Object.entries(g).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(!entries.length) return '<div class="recap-empty">Tür verisi yok</div>';
+  const max = entries[0][1];
+  return entries.map(([id,n])=>{
+    const name = (GENRE_NAMES||{})[id] || 'Diğer';
+    const pct = Math.max(8, Math.round(n/max*100));
+    return `<div class="recap-bar-row"><span class="recap-bar-lbl">${esc(name)}</span><div class="recap-bar-track"><div class="recap-bar-fill" style="width:${pct}%"></div></div><span class="recap-bar-n">${n}</span></div>`;
+  }).join('');
+}
+function recapBlock(icon, title, data){
+  if(!data.total){
+    return `<div class="recap-block"><div class="recap-block-hdr"><div class="recap-block-title">${icon} ${esc(title)}</div><div class="recap-block-count">0</div></div><div class="recap-empty">Bu dönemde kayıt yok</div></div>`;
+  }
+  return `<div class="recap-block">
+    <div class="recap-block-hdr">
+      <div class="recap-block-title">${icon} ${esc(title)}</div>
+      <div class="recap-block-count">${data.total}</div>
+    </div>
+    <div class="recap-block-sub">${data.movie} film · ${data.tv} dizi</div>
+    ${genreBarsHtml(data.g)}
+    ${data.top ? `<div class="recap-top">⭐ En yüksek puan: <strong style="color:var(--t1)">${esc(data.top.title)}</strong> (${data.top.rating}/5)</div>` : ''}
+  </div>`;
+}
+
+function openRecap(){ document.getElementById('recapModal').style.display = 'flex'; }
+function closeRecap(){ document.getElementById('recapModal').style.display = 'none'; }
+
+async function showRecap(type, y, m){
+  await loadGenreNames();
+  const d = computeRecap(type, y, m);
+  const title = type==='month' ? `📅 ${TR_MONTHS[m]} ${y} Özeti` : `🎉 ${y} Yılı Özeti`;
+  const total = d.together.total + d.mine.total + d.theirs.total;
+  const sub = total
+    ? 'Bu dönemde toplam ' + total + ' izleme kaydı'
+    : 'Bu dönemde henüz kayıt yok — izledikçe burası dolacak';
+
+  document.getElementById('recapContent').innerHTML = `
+    <div class="recap-title">${title}</div>
+    <div class="recap-sub">${sub}</div>
+    ${recapBlock('🤝','Beraber İzlediniz', d.together)}
+    ${recapBlock(emoji(d.mine.name||'Fox'), d.mine.name+"'in İzledikleri", d.mine)}
+    ${recapBlock(d.theirs.name?emoji(d.theirs.name):'👤', (d.theirs.name||'Partner')+"'in İzledikleri", d.theirs)}
+  `;
+  openRecap();
+}
+
+// Ayın/yılın ilk günlerinde bir kez otomatik göster
+function checkAutoRecap(){
+  if(!user) return;
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), day = now.getDate();
+
+  if(day <= 7){
+    const py = m===0 ? y-1 : y, pm = m===0 ? 11 : m-1;
+    const key = 'cm_recap_seen_month_'+py+'-'+pm+'_'+user.name;
+    if(!lsGet(key)){
+      lsSet(key, true);
+      setTimeout(()=>showRecap('month', py, pm), 1500);
+      return;
+    }
+  }
+  if(m===0 && day<=14){
+    const key2 = 'cm_recap_seen_year_'+(y-1)+'_'+user.name;
+    if(!lsGet(key2)){
+      lsSet(key2, true);
+      setTimeout(()=>showRecap('year', y-1, 0), 1500);
+    }
+  }
+}
 
 function toggleNotifMenu(){
   const m = document.getElementById('notifMenu');
@@ -2732,7 +2924,15 @@ function collectSeeds(){
 
   pos.sort((a,b)=>b.w-a.w);
   neg.sort((a,b)=>b.w-a.w);
-  return { pos: pos.slice(0,18), neg: neg.slice(0,8) };
+
+  // Film mi dizi mi ağırlıklı izleniyor? (ceza/ödül için oran)
+  let movieW = 0, tvW = 0;
+  pos.forEach(sd=>{ if(sd.tv) tvW += sd.w; else movieW += sd.w; });
+  const totalW = movieW + tvW || 1;
+  const movieShare = movieW / totalW;   // 0..1
+  const tvShare = 1 - movieShare;
+
+  return { pos: pos.slice(0,18), neg: neg.slice(0,8), movieShare, tvShare };
 }
 
 // ── 2) Tür profili (ağırlıklı + yaygınlık düzeltmeli) ───────────
@@ -2794,11 +2994,11 @@ async function buildDiscover(force){
   if(discBusy) return;
   const el = document.getElementById('discoverList');
   const cached = lsGet('cm_discover_'+(user?.name||''));
-  if(!force && cached && cached.v===3 && Date.now()-cached.ts < 24*60*60*1000){
+  if(!force && cached && cached.v===4 && Date.now()-cached.ts < 24*60*60*1000){
     discData = cached; renderDiscover(); return;
   }
 
-  const { pos, neg } = collectSeeds();
+  const { pos, neg, movieShare, tvShare } = collectSeeds();
   if(!pos.length){
     if(el) el.innerHTML = emptyHtml('✨','Önce birkaç yapım izleyin','“İzledik” sekmesine ekledikçe ve puan verdikçe öneriler keskinleşir');
     setCount('discover', 0); return;
@@ -2829,7 +3029,7 @@ async function buildDiscover(force){
   const mk = k => pool[k] || (pool[k] = { item:null, ev:0, seeds:[], neg:0, people:[], kw:0, src:{} });
   const bump = (x, kind, seedTitle, w, tag) => {
     if(!x || !x.poster_path) return;
-    const k = String(x.id);
+    const k = (kind||x.media_type||'movie')+':'+x.id;   // film/dizi ayrı isimlendirilir
     const p = mk(k);
     if(!p.item) p.item = normalizeCand(x, kind);
     else if(!p.item.titleTr && x.titleTr) p.item.titleTr = x.titleTr;
@@ -2980,7 +3180,8 @@ async function buildDiscover(force){
   let items = Object.keys(pool).map(k=>{
     const o = pool[k], x = o.item;
     if(!x) return null;
-    if(inSharedAlready(k) || blocked[k] || x.adult) return null;
+    const realId = String(x.id);
+    if(inSharedAlready(realId) || blocked[k] || x.adult) return null;
     if((x.vote_count||0) < 60) return null;
 
     // Herhangi birinizin izlediği bir şey ASLA önerilmez
@@ -2988,6 +3189,12 @@ async function buildDiscover(force){
     if(watchedBy.length) return null;
 
     const t = tmdbTitles(x);
+
+    // Kalite kapısı: TMDB'de İngilizce çevirisi hiç yoksa (Latin dışı ve
+    // "İngilizce" alanı orijinaliyle aynı native metinse) okunaksız kalır → ele
+    const olLatin = t.origLang ? LATIN_LANGS.has(t.origLang.toLowerCase()) : isLatinText(t.origTitle);
+    if(!olLatin && !isLatinText(t.titleEn) && !isLatinText(t.titleTr)) return null;
+
     const owner = pidx.ids[k]
       || pidx.keys[nrm(t.titleEn)+'|'+t.year]
       || pidx.keys[nrm(t.titleTr)+'|'+t.year]
@@ -3024,8 +3231,13 @@ async function buildDiscover(force){
     score -= o.neg * 1.7;
     if(owner) score += 2.4;
 
+    // Film/dizi dengesi: "biz genelde film izleriz" ise dizi önerileri bastırılır (tam kapatmadan)
+    const isTv = x.media_type==='tv';
+    score *= isTv ? (0.5 + tvShare*1.0) : (0.5 + movieShare*1.0);
+
     return { id:k, item:x, reasons:o.seeds, people:o.people, owner, gem,
              gf:Math.round(gf*100), bayes:Math.round(bayes*10)/10, src:o.src, score };
+    // not: 'id' burada "tür:tmdbId" birleşik anahtarı — kart bazında benzersizliği garanti eder
   }).filter(Boolean);
 
   items.sort((a,b)=>b.score-a.score);
@@ -3041,12 +3253,32 @@ async function buildDiscover(force){
   items.sort((a,b)=>b.score-a.score);
 
   const top = items.slice(0,70);
+
+  // Ekrana çıkacak son listedeki "İngilizce (Türkçe)" gösterimi için
+  // eksik Türkçe başlıkları burada toplu çekiyoruz (görüntülemeden önce)
+  setStatus('Son rötuşlar…', 'Türkçe başlıklar tamamlanıyor');
+  const trCache = trTitleCache();
+  for(const it of top){
+    const x = it.item;
+    const olLatin = x.origLang ? LATIN_LANGS.has((x.origLang||'').toLowerCase()) : isLatinText(x.origTitle);
+    if(olLatin || x.titleTr) continue;
+    const key = (x.media_type==='tv'?'t':'m')+x.id;
+    if(trCache[key] !== undefined){ x.titleTr = trCache[key] || ''; continue; }
+    try{
+      const d = await fetch(`${TMDB_BASE}/${x.media_type}/${x.id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json());
+      x.titleTr = (d && (d.title||d.name)) || '';
+      trCache[key] = x.titleTr;
+    }catch(e){ trCache[key] = ''; }
+    await new Promise(r=>setTimeout(r,90));
+  }
+  lsSet('cm_tr_title_cache', trCache);
+
   const max = top.length ? top[0].score : 1;
   top.forEach(it=>{
     it.match = (max>0.01 && it.score>0) ? Math.max(40, Math.min(99, Math.round((it.score/max)*99))) : 45;
   });
 
-  discData = { v:3, ts:Date.now(), seeds:pos.length,
+  discData = { v:4, ts:Date.now(), seeds:pos.length,
     topGenres: topGenres.map(g=>GENRE_NAMES[g]||g),
     people: topPeople.slice(0,4).map(p=>p.name),
     items: top.map(x=>({ id:x.id, owner:x.owner, reasons:x.reasons, people:x.people, gem:x.gem,
