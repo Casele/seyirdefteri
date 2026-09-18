@@ -172,7 +172,7 @@ img{display:block}
 /* ── MODAL ──────────────────────────────────────────────────── */
 #modal{display:none;position:fixed;inset:0;z-index:5000;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.7);padding:20px}
 #modal.open{display:flex}
-.modal-box{background:var(--surface);border-radius:20px 20px 16px 16px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 -4px 30px rgba(0,0,0,.5)}
+.modal-box{background:var(--surface);border-radius:20px 20px 16px 16px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 -4px 30px rgba(0,0,0,.5);scrollbar-gutter:stable}
 .modal-hdr{display:flex;gap:14px;margin-bottom:18px}
 .modal-poster{width:70px;height:105px;object-fit:cover;border-radius:10px;flex-shrink:0}
 .modal-poster-ph{width:70px;height:105px;border-radius:10px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
@@ -180,7 +180,7 @@ img{display:block}
 .modal-title{font-family:'Playfair Display',serif;font-size:17px;line-height:1.3;margin-bottom:5px}
 .modal-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .dest-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
-.dest-btn{padding:8px 6px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:12px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.3}
+.dest-btn{padding:8px 6px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:12px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:border-color .2s,background .2s,color .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.3;min-height:62px;box-sizing:border-box}
 .dest-btn:hover{border-color:var(--gold);color:var(--t1)}
 .dest-btn.on{border-color:var(--gold);background:var(--goldbg);color:var(--gold)}
 .dest-btn small{font-weight:400;color:var(--t3);font-size:10.5px}
@@ -238,21 +238,30 @@ img{display:block}
 .own-tag{display:inline-block;background:rgba(180,139,232,.14);color:var(--bun,#b48be8);border:1px solid rgba(180,139,232,.35);
   border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;margin:4px 0}
 .recap-box{background:linear-gradient(165deg,var(--surface),var(--s2));border:1px solid var(--s3);border-radius:22px;
-  padding:30px 26px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+  padding:30px 26px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.7);
+  animation:recapPop .42s cubic-bezier(.2,1,.3,1)}
+@keyframes recapPop{from{opacity:0;transform:scale(.90) translateY(18px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes recapBlockIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes recapFall{from{transform:translateY(-24px) rotate(0deg);opacity:1}to{transform:translateY(460px) rotate(340deg);opacity:0}}
+@keyframes recapTitlePulse{0%{text-shadow:0 0 0 rgba(232,184,75,0)}45%{text-shadow:0 0 22px rgba(232,184,75,.55)}100%{text-shadow:0 0 0 rgba(232,184,75,0)}}
+.recap-confetti{position:absolute;top:-24px;pointer-events:none;animation-name:recapFall;animation-timing-function:ease-in;animation-fill-mode:forwards;z-index:2;user-select:none}
 .recap-close{position:absolute;top:14px;right:14px;background:var(--s3);border:none;color:var(--t2);width:30px;height:30px;
   border-radius:50%;cursor:pointer;font-size:14px;line-height:1}
 .recap-close:hover{background:var(--s3);opacity:.8}
-.recap-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--t1);text-align:center;margin-bottom:2px}
+.recap-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--t1);text-align:center;margin-bottom:2px;
+  animation:recapBlockIn .5s ease both, recapTitlePulse 2.2s ease .5s 1}
 .recap-sub{text-align:center;color:var(--t3);font-size:12px;margin-bottom:22px}
-.recap-block{background:var(--s2);border-radius:16px;padding:16px 18px;margin-bottom:14px;border:1px solid var(--s3)}
+.recap-block{background:var(--s2);border-radius:16px;padding:16px 18px;margin-bottom:14px;border:1px solid var(--s3);
+  opacity:0;animation:recapBlockIn .5s cubic-bezier(.2,1,.3,1) both}
 .recap-block-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .recap-block-title{font-weight:800;font-size:14px;color:var(--t1)}
-.recap-block-count{font-size:20px;font-weight:800;color:var(--gold)}
+.recap-block-count{font-size:20px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+#recapTotalNum{font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
 .recap-block-sub{font-size:11px;color:var(--t3);margin-top:-6px;margin-bottom:10px}
 .recap-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .recap-bar-lbl{font-size:11px;color:var(--t2);width:78px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .recap-bar-track{flex:1;height:7px;background:var(--s3);border-radius:4px;overflow:hidden}
-.recap-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),#f0d67a);border-radius:4px}
+.recap-bar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold),#f0d67a);border-radius:4px;transition:width 1s cubic-bezier(.16,1,.3,1)}
 .recap-bar-n{font-size:10px;color:var(--t3);width:16px;text-align:right;flex-shrink:0}
 .recap-top{font-size:11.5px;color:var(--t2);margin-top:8px;padding-top:8px;border-top:1px dashed var(--s3)}
 .recap-empty{font-size:12px;color:var(--t3);padding:6px 0}
@@ -1185,17 +1194,18 @@ function genreBarsHtml(g){
   return entries.map(([id,n])=>{
     const name = (GENRE_NAMES||{})[id] || 'Diğer';
     const pct = Math.max(8, Math.round(n/max*100));
-    return `<div class="recap-bar-row"><span class="recap-bar-lbl">${esc(name)}</span><div class="recap-bar-track"><div class="recap-bar-fill" style="width:${pct}%"></div></div><span class="recap-bar-n">${n}</span></div>`;
+    return `<div class="recap-bar-row"><span class="recap-bar-lbl">${esc(name)}</span><div class="recap-bar-track"><div class="recap-bar-fill" data-w="${pct}"></div></div><span class="recap-bar-n">${n}</span></div>`;
   }).join('');
 }
-function recapBlock(icon, title, data){
+function recapBlock(icon, title, data, idx){
+  const delay = 'animation-delay:' + (0.15 + idx*0.13) + 's';
   if(!data.total){
-    return `<div class="recap-block"><div class="recap-block-hdr"><div class="recap-block-title">${icon} ${esc(title)}</div><div class="recap-block-count">0</div></div><div class="recap-empty">Bu dönemde kayıt yok</div></div>`;
+    return `<div class="recap-block" style="${delay}"><div class="recap-block-hdr"><div class="recap-block-title">${icon} ${esc(title)}</div><div class="recap-block-count" data-n="0">0</div></div><div class="recap-empty">Bu dönemde kayıt yok</div></div>`;
   }
-  return `<div class="recap-block">
+  return `<div class="recap-block" style="${delay}">
     <div class="recap-block-hdr">
       <div class="recap-block-title">${icon} ${esc(title)}</div>
-      <div class="recap-block-count">${data.total}</div>
+      <div class="recap-block-count" data-n="${data.total}">0</div>
     </div>
     <div class="recap-block-sub">${data.movie} film · ${data.tv} dizi</div>
     ${genreBarsHtml(data.g)}
@@ -1203,8 +1213,55 @@ function recapBlock(icon, title, data){
   </div>`;
 }
 
+// Sayıyı 0'dan hedefe yumuşakça saydırır
+function animateCount(el, target, dur){
+  if(!el) return;
+  dur = dur || 800;
+  const t0 = performance.now();
+  function step(t){
+    const p = Math.min(1, (t-t0)/dur);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(target*eased);
+    if(p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Kutu açıldıktan sonra: sayaçları saydır, çubukları doldur, (yıl özetinde) konfeti patlat
+function animateRecapIn(container, isYear){
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      container.querySelectorAll('.recap-bar-fill').forEach(b=>{ b.style.width = (b.dataset.w||0)+'%'; });
+    });
+  });
+  container.querySelectorAll('.recap-block-count').forEach(el=>{
+    animateCount(el, +el.dataset.n||0, 900);
+  });
+  const totalEl = container.querySelector('#recapTotalNum');
+  if(totalEl) animateCount(totalEl, +totalEl.dataset.n||0, 1000);
+
+  if(isYear){
+    const box = container.closest('.recap-box') || container;
+    const emojis = ['🎉','✨','🍿','🎬','⭐','🎊'];
+    for(let i=0;i<16;i++){
+      const sp = document.createElement('span');
+      sp.className = 'recap-confetti';
+      sp.textContent = emojis[i % emojis.length];
+      sp.style.left = (Math.random()*94)+'%';
+      sp.style.animationDelay = (Math.random()*0.5)+'s';
+      sp.style.animationDuration = (1.7 + Math.random()*1.3)+'s';
+      sp.style.fontSize = (13 + Math.random()*11)+'px';
+      box.appendChild(sp);
+      setTimeout(()=>sp.remove(), 3200);
+    }
+  }
+}
+
 function openRecap(){ document.getElementById('recapModal').style.display = 'flex'; }
-function closeRecap(){ document.getElementById('recapModal').style.display = 'none'; }
+function closeRecap(){
+  document.getElementById('recapModal').style.display = 'none';
+  setTimeout(()=>{ const c=document.getElementById('recapContent'); if(c) c.innerHTML=''; }, 200);
+}
 
 async function showRecap(type, y, m){
   await loadGenreNames();
@@ -1215,14 +1272,20 @@ async function showRecap(type, y, m){
     ? 'Bu dönemde toplam ' + total + ' izleme kaydı'
     : 'Bu dönemde henüz kayıt yok — izledikçe burası dolacak';
 
-  document.getElementById('recapContent').innerHTML = `
+  const subHtml = total
+    ? 'Bu dönemde toplam <span id="recapTotalNum" data-n="'+total+'">0</span> izleme kaydı'
+    : 'Bu dönemde henüz kayıt yok — izledikçe burası dolacak';
+
+  const content = document.getElementById('recapContent');
+  content.innerHTML = `
     <div class="recap-title">${title}</div>
-    <div class="recap-sub">${sub}</div>
-    ${recapBlock('🤝','Beraber İzlediniz', d.together)}
-    ${recapBlock(emoji(d.mine.name||'Fox'), d.mine.name+"'in İzledikleri", d.mine)}
-    ${recapBlock(d.theirs.name?emoji(d.theirs.name):'👤', (d.theirs.name||'Partner')+"'in İzledikleri", d.theirs)}
+    <div class="recap-sub">${subHtml}</div>
+    ${recapBlock('🤝','Beraber İzlediniz', d.together, 0)}
+    ${recapBlock(emoji(d.mine.name||'Fox'), d.mine.name+"'in İzledikleri", d.mine, 1)}
+    ${recapBlock(d.theirs.name?emoji(d.theirs.name):'👤', (d.theirs.name||'Partner')+"'in İzledikleri", d.theirs, 2)}
   `;
   openRecap();
+  animateRecapIn(content, type==='year');
 }
 
 // Ayın/yılın ilk günlerinde bir kez otomatik göster
@@ -1839,6 +1902,7 @@ function addToMyLog(item, rating, note){
   };
   log[id] = entry;
   saveMyLog(log);
+  invalidateDiscoverCache();
   showToast('📓 İzledim listesine eklendi!');
 }
 
@@ -2230,6 +2294,7 @@ async function personalToWatched(id){
     }));
     const backup = Object.assign({}, e);
     delete personalLib[id]; savePersonal(); renderPersonal();
+    invalidateDiscoverCache();
     showToast('✓ Ortak arşive taşındı!', ()=>{
       personalLib[id] = backup; savePersonal(); renderPersonal();
       db.ref('sharedLib/'+sid).remove().catch(()=>{});
@@ -2250,6 +2315,7 @@ function personalToMyLog(id){
     loggedAt: Date.now()
   });
   saveMyLog(log);
+  invalidateDiscoverCache();
   const backup = Object.assign({}, e);
   delete personalLib[id];
   savePersonal(); renderPersonal();
@@ -2342,34 +2408,53 @@ function toggleOverview(){
   const open = o.classList.toggle('clamped');
   m.textContent = open ? '▾ Devamını oku' : '▴ Daha az göster';
 }
+function ovCache(){ return lsGet('cm_ov_cache') || {}; }
+function refreshOverviewBtn(o, m){
+  m.style.display = 'none';
+  setTimeout(()=>{ if(o.scrollHeight > o.clientHeight + 4) m.style.display='block'; }, 30);
+}
+// Açıklama, elde ne olursa olsun HER ZAMAN Türkçeye çevrilmeye çalışılır.
+// item.overview İngilizce gelmiş olsa bile (Sana Özel adayları böyle gelir)
+// arka planda TMDB'den Türkçesi çekilip üzerine yazılır. TMDB'de gerçekten
+// Türkçe metin yoksa (nadir), elimizdeki en iyi seçenek (varsa İngilizcesi) kalır.
 function setOverview(txt, item, tv){
   const o = document.getElementById('mOverview');
   const m = document.getElementById('mOverviewMore');
   o.classList.add('clamped');
   o.textContent = txt || '';
   m.textContent = '▾ Devamını oku';
-  m.style.display = 'none';
-  setTimeout(()=>{ if(o.scrollHeight > o.clientHeight + 4) m.style.display='block'; }, 30);
+  refreshOverviewBtn(o, m);
 
-  // Açıklama yoksa TMDB'den çek (önce TR, boşsa EN)
   const id = item && (item.tmdbId || item.id);
-  if(!txt && id && /^\d+$/.test(String(id))){
-    const kind = tv ? 'tv' : 'movie';
-    (async()=>{
-      try{
-        let d = await fetch(`${TMDB_BASE}/${kind}/${id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json());
-        let ov = d.overview;
-        if(!ov){
-          d = await fetch(`${TMDB_BASE}/${kind}/${id}?api_key=${TMDB_KEY}&language=en-US`).then(r=>r.json());
-          ov = d.overview;
-        }
-        if(ov && currentItem && String(currentItem.id)===String(item.id)){
-          o.textContent = ov;
-          setTimeout(()=>{ if(o.scrollHeight > o.clientHeight + 4) m.style.display='block'; }, 30);
-        }
-      }catch(e){}
-    })();
+  if(!id || !/^\d+$/.test(String(id))) return;
+  const kind = tv ? 'tv' : 'movie';
+  const key = (tv?'t':'m')+id;
+  const stillOpen = () => currentItem && String(currentItem.id)===String(item.id);
+
+  const cache = ovCache();
+  const cached = cache[key];
+  if(cached && cached.ts && Date.now()-cached.ts < 7*864e5){
+    if(cached.tr && stillOpen() && o.textContent !== cached.tr){
+      o.textContent = cached.tr; refreshOverviewBtn(o, m);
+    }
+    return;
   }
+  (async()=>{
+    try{
+      const d = await fetch(`${TMDB_BASE}/${kind}/${id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json());
+      const tr = (d && d.overview) || '';
+      cache[key] = { tr, ts: Date.now() };
+      lsSet('cm_ov_cache', cache);
+      if(tr && stillOpen() && o.textContent !== tr){
+        o.textContent = tr;
+        refreshOverviewBtn(o, m);
+      } else if(!tr && !txt && stillOpen()){
+        // Ne elimizde ne TMDB'de Türkçe var → son çare İngilizce dene
+        const de = await fetch(`${TMDB_BASE}/${kind}/${id}?api_key=${TMDB_KEY}&language=en-US`).then(r=>r.json());
+        if(de.overview && stillOpen()){ o.textContent = de.overview; refreshOverviewBtn(o, m); }
+      }
+    }catch(e){}
+  })();
 }
 
 function closeModal(){ document.getElementById('modal').classList.remove('open'); currentItem=null; }
@@ -2471,6 +2556,7 @@ async function saveItem(){
       if(rating>0) ratings[user.name] = rating;
       if(note)     notes[user.name]   = note;
       await db.ref('sharedLib/'+id).set(Object.assign({}, base, {status, ratings, notes, wantedBy}));
+      if(status==='watched') invalidateDiscoverCache();
       showToast(status==='watched'?'✓ Ortak arşive eklendi!':'🎬 İzleyeceğiz listesine eklendi!');
 
     } else if(dest==='mylog'){
@@ -2498,6 +2584,7 @@ async function saveItem(){
       if(!wantedBy2.includes(user.name)) wantedBy2.push(user.name);
       if(rating>0) ratings2[user.name] = rating;
       await db.ref('sharedLib/'+id).set(Object.assign({}, base, {status:'ongoing', ratings:ratings2, wantedBy:wantedBy2, updatedAt:Date.now()}));
+      invalidateDiscoverCache();
       showToast('▶ Devam Ediyoruz listesine eklendi!');
     }
   } catch(err){
@@ -2543,6 +2630,7 @@ async function markOngoingWatched(id){
     await db.ref('sharedLib/'+id).set(updated);
     renderOngoing();
     updateCounts();
+    invalidateDiscoverCache();
     showToast('✅ İzledik listesine taşındı!', async()=>{
       sharedLib[id] = item;
       await db.ref('sharedLib/'+id).set(item);
@@ -2662,6 +2750,7 @@ async function importSingleCSV(file){
     }
     saveMyLog(log);
     renderMyLog();
+    invalidateDiscoverCache();
     showToast(`✅ ${count} film eklendi! Arka planda posterler çekiliyor...`);
     fetchPostersForLog(toFetch);
     
@@ -2828,6 +2917,16 @@ async function loadGenreNames(){
   return GENRE_NAMES;
 }
 
+let _discRebuildTimer = null;
+function invalidateDiscoverCache(){
+  try{ localStorage.removeItem('cm_discover_'+(user?.name||'')); }catch(e){}
+  if(discData) discData = null;
+  if(activeTab()==='discover'){
+    clearTimeout(_discRebuildTimer);
+    _discRebuildTimer = setTimeout(()=>buildDiscover(true), 3000);
+  }
+}
+
 function setDiscFilter(f, btn){
   discFilter = f;
   document.querySelectorAll('#pane-discover .pill').forEach(b=>b.classList.remove('on'));
@@ -2885,6 +2984,22 @@ function lookupLog(idx, cand){
 function inSharedAlready(id){
   if(sharedLib[id]) return true;
   return !!Object.values(sharedLib).find(e=>String(e.tmdbId||e.id)===String(id));
+}
+
+// sharedLib'i (İzledik / Devam / İzleyeceğiz — TÜM durumlar) hem id hem
+// başlık+yıl bazında arayan güçlü dizin. Eksik/yanlış tmdbId'li eski
+// kayıtlarda bile eşleşmeyi garanti eder.
+function sharedIndex(){
+  const idx = { ids:{}, keys:{} };
+  Object.values(sharedLib).forEach(e=>{
+    const tid = e.tmdbId || e.id;
+    if(tid) idx.ids[String(tid)] = true;
+    const y = e.year || '';
+    [nrm(e.titleEn||''), nrm(e.titleTr||e.title||''), nrm(e.origTitle||'')].forEach(k=>{
+      if(k.length>2) idx.keys[k+'|'+y] = true;
+    });
+  });
+  return idx;
 }
 
 // ── 1) TOHUMLAR: neyi ne kadar sevdiğimizin kanıtı ──────────────
@@ -2995,7 +3110,7 @@ async function buildDiscover(force){
   if(discBusy) return;
   const el = document.getElementById('discoverList');
   const cached = lsGet('cm_discover_'+(user?.name||''));
-  if(!force && cached && cached.v===5 && Date.now()-cached.ts < 24*60*60*1000){
+  if(!force && cached && cached.v===6 && Date.now()-cached.ts < 24*60*60*1000){
     discData = cached; renderDiscover(); return;
   }
 
@@ -3176,27 +3291,32 @@ async function buildDiscover(force){
   // ════ SKORLAMA ════
   const pidx = personalIndex();
   const lidx = logIndex();
+  const sidx = sharedIndex();
   const blocked = lsGet('cm_disc_block') || {};
 
   let items = Object.keys(pool).map(k=>{
     const o = pool[k], x = o.item;
     if(!x) return null;
     const realId = String(x.id);
-    if(inSharedAlready(realId) || blocked[k] || x.adult) return null;
+    if(blocked[k] || x.adult) return null;
     if((x.vote_count||0) < 60) return null;
-
-    // Herhangi birinizin izlediği bir şey ASLA önerilmez
-    const watchedBy = lookupLog(lidx, x) || [];
-    if(watchedBy.length) return null;
 
     const t = tmdbTitles(x);
 
-    // Kalite kapısı: TMDB'de İngilizce çevirisi hiç yoksa (Latin dışı ve
-    // "İngilizce" alanı orijinaliyle aynı native metinse) okunaksız kalır → ele
-    const olLatin = t.origLang ? LATIN_LANGS.has(t.origLang.toLowerCase()) : isLatinText(t.origTitle);
-    if(!olLatin && !isLatinText(t.titleEn) && !isLatinText(t.titleTr)) return null;
+    // İzledik / Devam / İzleyeceğiz listenizde olan HİÇBİR ŞEY önerilmez.
+    // Hem tmdbId hem (eski kayıtlar için) başlık+yıl eşleşmesine bakılır.
+    const alreadyShared = inSharedAlready(realId)
+      || sidx.ids[realId]
+      || sidx.keys[nrm(t.titleEn)+'|'+t.year]
+      || sidx.keys[nrm(t.titleTr)+'|'+t.year]
+      || sidx.keys[nrm(t.origTitle)+'|'+t.year];
+    if(alreadyShared) return null;
 
-    const owner = pidx.ids[k]
+    // Herhangi birinizin kişisel günlüğünde izlenmiş bir şey de önerilmez
+    const watchedBy = lookupLog(lidx, x) || [];
+    if(watchedBy.length) return null;
+
+    const owner = pidx.ids[realId]
       || pidx.keys[nrm(t.titleEn)+'|'+t.year]
       || pidx.keys[nrm(t.titleTr)+'|'+t.year]
       || pidx.keys[nrm(t.origTitle)+'|'+t.year]
@@ -3252,7 +3372,7 @@ async function buildDiscover(force){
   });
   items.sort((a,b)=>b.score-a.score);
 
-  const top = items.slice(0,70);
+  const top = items.slice(0,50);
 
   // Ekrana çıkacak son listedeki "İngilizce (Türkçe)" gösterimi için
   // eksik Türkçe başlıkları burada toplu çekiyoruz (görüntülemeden önce)
@@ -3272,7 +3392,7 @@ async function buildDiscover(force){
   }
   lsSet('cm_tr_title_cache', trCache);
 
-  discData = { v:5, ts:Date.now(), seeds:pos.length,
+  discData = { v:6, ts:Date.now(), seeds:pos.length,
     topGenres: topGenres.map(g=>GENRE_NAMES[g]||g),
     people: topPeople.slice(0,4).map(p=>p.name),
     items: top.map(x=>({ id:x.id, owner:x.owner, reasons:x.reasons, people:x.people,
