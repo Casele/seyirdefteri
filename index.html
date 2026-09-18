@@ -180,7 +180,7 @@ img{display:block}
 .modal-title{font-family:'Playfair Display',serif;font-size:17px;line-height:1.3;margin-bottom:5px}
 .modal-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .dest-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
-.dest-btn{padding:8px 6px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:12px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:border-color .2s,background .2s,color .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.3;min-height:62px;box-sizing:border-box}
+.dest-btn{padding:6px 5px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:11px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:border-color .2s,background .2s,color .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.18;height:70px;box-sizing:border-box;overflow:hidden}
 .dest-btn:hover{border-color:var(--gold);color:var(--t1)}
 .dest-btn.on{border-color:var(--gold);background:var(--goldbg);color:var(--gold)}
 .dest-btn small{font-weight:400;color:var(--t3);font-size:10.5px}
@@ -248,8 +248,17 @@ img{display:block}
 .recap-close{position:absolute;top:14px;right:14px;background:var(--s3);border:none;color:var(--t2);width:30px;height:30px;
   border-radius:50%;cursor:pointer;font-size:14px;line-height:1}
 .recap-close:hover{background:var(--s3);opacity:.8}
-.recap-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--t1);text-align:center;margin-bottom:2px;
-  animation:recapBlockIn .5s ease both, recapTitlePulse 2.2s ease .5s 1}
+.recap-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:800;text-align:center;margin-bottom:2px;
+  background:linear-gradient(100deg,var(--t1) 30%,var(--gold) 50%,var(--t1) 70%);background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:recapBlockIn .5s ease both, recapShine 2.6s linear .3s infinite}
+@keyframes recapShine{0%{background-position:200% 0}100%{background-position:-40% 0}}
+.recap-headline{text-align:center;font-size:14px;font-weight:700;color:var(--gold);margin:2px 0 16px;
+  opacity:0;animation:recapBlockIn .5s ease .55s both}
+.recap-icon-pop{display:inline-block;animation:recapIconPop .6s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes recapIconPop{0%{transform:scale(0) rotate(-25deg)}60%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+.recap-closing{text-align:center;font-size:13px;color:var(--t2);margin-top:4px;padding-top:14px;border-top:1px dashed var(--s3);
+  opacity:0;animation:recapBlockIn .5s ease .9s both}
 .recap-sub{text-align:center;color:var(--t3);font-size:12px;margin-bottom:22px}
 .recap-block{background:var(--s2);border-radius:16px;padding:16px 18px;margin-bottom:14px;border:1px solid var(--s3);
   opacity:0;animation:recapBlockIn .5s cubic-bezier(.2,1,.3,1) both}
@@ -1204,7 +1213,7 @@ function recapBlock(icon, title, data, idx){
   }
   return `<div class="recap-block" style="${delay}">
     <div class="recap-block-hdr">
-      <div class="recap-block-title">${icon} ${esc(title)}</div>
+      <div class="recap-block-title"><span class="recap-icon-pop" style="animation-delay:${0.25+idx*0.13}s">${icon}</span> ${esc(title)}</div>
       <div class="recap-block-count" data-n="${data.total}">0</div>
     </div>
     <div class="recap-block-sub">${data.movie} film · ${data.tv} dizi</div>
@@ -1228,7 +1237,7 @@ function animateCount(el, target, dur){
 }
 
 // Kutu açıldıktan sonra: sayaçları saydır, çubukları doldur, (yıl özetinde) konfeti patlat
-function animateRecapIn(container, isYear){
+function animateRecapIn(container, isYear, total){
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
       container.querySelectorAll('.recap-bar-fill').forEach(b=>{ b.style.width = (b.dataset.w||0)+'%'; });
@@ -1240,10 +1249,11 @@ function animateRecapIn(container, isYear){
   const totalEl = container.querySelector('#recapTotalNum');
   if(totalEl) animateCount(totalEl, +totalEl.dataset.n||0, 1000);
 
-  if(isYear){
+  if(total > 0){
     const box = container.closest('.recap-box') || container;
     const emojis = ['🎉','✨','🍿','🎬','⭐','🎊'];
-    for(let i=0;i<16;i++){
+    const count = isYear ? 18 : 8;   // yıl özeti daha coşkulu, ay özeti hafif
+    for(let i=0;i<count;i++){
       const sp = document.createElement('span');
       sp.className = 'recap-confetti';
       sp.textContent = emojis[i % emojis.length];
@@ -1255,6 +1265,28 @@ function animateRecapIn(container, isYear){
       setTimeout(()=>sp.remove(), 3200);
     }
   }
+}
+
+// Üç bloğun türlerini birleştirip en baskın olanı bulur → "Bu ay en çok X izlediniz!" cümlesi
+function dominantGenreSentence(d, isYear){
+  const combined = {};
+  [d.together.g, d.mine.g, d.theirs.g].forEach(g=>{
+    Object.entries(g||{}).forEach(([id,n])=>{ combined[id] = (combined[id]||0)+n; });
+  });
+  const top = Object.entries(combined).sort((a,b)=>b[1]-a[1])[0];
+  if(!top) return '';
+  const name = (GENRE_NAMES||{})[top[0]];
+  if(!name) return '';
+  const donem = isYear ? 'yıl' : 'ay';
+  return `✨ Bu ${donem} en çok ${name.toUpperCase()} izlediniz!`;
+}
+function recapClosingLine(total, isYear){
+  if(!total) return '';
+  const lines = isYear
+    ? ['Yolun başındasınız, daha nice yıllar! 🌱','Güzel bir yıl geçirdiniz! 🍿','Gerçek bir izleme maratonu! 🔥','Bu yıl resmen ekranlara taşındınız! 🏆👑']
+    : ['Yeni başlıyorsunuz, devam! 🌱','Güzel bir tempo! 🍿','Bu ay gaza gelmişsiniz! 🔥','Bu ay resmen ekranlara taşındınız! 🏆'];
+  const idx = total < 5 ? 0 : total < 15 ? 1 : total < 30 ? 2 : 3;
+  return lines[idx];
 }
 
 function openRecap(){ document.getElementById('recapModal').style.display = 'flex'; }
@@ -1275,17 +1307,21 @@ async function showRecap(type, y, m){
   const subHtml = total
     ? 'Bu dönemde toplam <span id="recapTotalNum" data-n="'+total+'">0</span> izleme kaydı'
     : 'Bu dönemde henüz kayıt yok — izledikçe burası dolacak';
+  const headline = total ? dominantGenreSentence(d, type==='year') : '';
+  const closing = recapClosingLine(total, type==='year');
 
   const content = document.getElementById('recapContent');
   content.innerHTML = `
     <div class="recap-title">${title}</div>
     <div class="recap-sub">${subHtml}</div>
+    ${headline ? `<div class="recap-headline">${esc(headline)}</div>` : '<div style="margin-bottom:10px"></div>'}
     ${recapBlock('🤝','Beraber İzlediniz', d.together, 0)}
     ${recapBlock(emoji(d.mine.name||'Fox'), d.mine.name+"'in İzledikleri", d.mine, 1)}
     ${recapBlock(d.theirs.name?emoji(d.theirs.name):'👤', (d.theirs.name||'Partner')+"'in İzledikleri", d.theirs, 2)}
+    ${closing ? `<div class="recap-closing">${esc(closing)}</div>` : ''}
   `;
   openRecap();
-  animateRecapIn(content, type==='year');
+  animateRecapIn(content, type==='year', total);
 }
 
 // Ayın/yılın ilk günlerinde bir kez otomatik göster
@@ -2824,7 +2860,9 @@ async function tmdbFindPosterWithId(title, year){
     const exact = all.find(r=>(r.release_date||r.first_air_date||'').startsWith(year));
     const hit = exact||all[0];
     cachePoster(pk, hit.poster_path);
-    return {poster:hit.poster_path, tmdbId:hit.id, tmdbTitle:hit.title||hit.name, originalTitle:hit.original_title||hit.original_name||''};
+    return {poster:hit.poster_path, tmdbId:hit.id, tmdbTitle:hit.title||hit.name,
+            originalTitle:hit.original_title||hit.original_name||'', origLang:hit.original_language||'',
+            tv: hit.media_type==='tv'};
   } catch(e){ return null; }
 }
 
@@ -2842,6 +2880,9 @@ async function fetchPostersForLog(ids){
         upd.tmdbId = String(pResult.tmdbId);
         upd.tmdbTitle = pResult.tmdbTitle||e.title;
         upd.origTitle = pResult.originalTitle||'';
+        upd.origLang = pResult.origLang||'';
+        // İngilizce başlık olarak elimizdeki en iyi ad (parantez gösterimi için şart)
+        upd.titleEn = (pResult.origLang==='en') ? (pResult.originalTitle||pResult.tmdbTitle||e.title) : (pResult.tmdbTitle||e.title);
         if(pResult.tmdbTitle && pResult.tmdbTitle.toLowerCase()!==e.title.toLowerCase())
           upd.altTitle = pResult.tmdbTitle;
       }
@@ -2864,11 +2905,19 @@ async function fetchPostersForPersonal(ids){
   for(let i=0;i<ids.length;i++){
     const id=ids[i]; const e=personalLib[id];
     if(!e||e.poster) continue;
-    const p = await tmdbFindPoster(e.title, e.year);
-    if(p){ 
-      personalLib[id]=Object.assign({},e,{poster:p}); updated++; 
+    const pResult = await tmdbFindPosterWithId(e.title, e.year);
+    if(pResult){
+      const upd = {poster:pResult.poster};
+      if(pResult.tmdbId && String(id).startsWith('lb_')){
+        upd.tmdbId = String(pResult.tmdbId);
+        upd.origTitle = pResult.originalTitle||'';
+        upd.origLang = pResult.origLang||'';
+        upd.titleEn = (pResult.origLang==='en') ? (pResult.originalTitle||pResult.tmdbTitle||e.title) : (pResult.tmdbTitle||e.title);
+        upd.tv = !!pResult.tv;
+      }
+      personalLib[id]=Object.assign({},e,upd); updated++;
     } else {
-      personalLib[id]=Object.assign({},e,{poster:'N/A'}); 
+      personalLib[id]=Object.assign({},e,{poster:'N/A'});
     }
     if(i%10===9 || i===ids.length-1){
       savePersonal();
