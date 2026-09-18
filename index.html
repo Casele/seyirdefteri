@@ -259,9 +259,6 @@ img{display:block}
 .prov-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:0}
 .prov-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px}
 .prov-logo{width:26px;height:26px;border-radius:6px;object-fit:cover;border:1px solid var(--s3)}
-.matchb{display:inline-block;background:rgba(232,184,75,.14);color:var(--gold);border:1px solid var(--goldbr);
-  border-radius:8px;padding:1px 8px;font-size:10px;font-weight:800;letter-spacing:.2px}
-.own-tag.gem{background:rgba(232,184,75,.14);color:var(--gold);border-color:var(--goldbr)}
 .own-tag.half{background:rgba(126,184,212,.14);color:var(--fox,#7eb8d4);border-color:rgba(126,184,212,.35)}
 .lposter{flex-shrink:0;cursor:pointer;line-height:0;border-radius:8px;transition:transform .16s ease, box-shadow .16s ease}
 .lposter:hover{transform:scale(1.05);box-shadow:0 6px 18px rgba(0,0,0,.55)}
@@ -661,25 +658,29 @@ function isLatinText(t){
 }
 
 // KURAL:
-//  • Orijinal dil Latin alfabesindeyse (İngilizce, Almanca, Fransızca, Türkçe…) → sadece ORİJİNAL ad
-//  • Latin dışı bir alfabedeyse (Japonca, Çince, Korece, Rusça…)              → İngilizce (Türkçe)
-//    Türkçe adı henüz bilinmiyorsa "pending" işaretlenir; ekranda görününce
+//  • ANA başlık: orijinal ad okunabilir bir alfabedeyse (İngilizce, Almanca,
+//    Fransızca, Türkçe, Vietnamca…) o kalır; okunamıyorsa (Japonca, Çince,
+//    Korece, Rusça…) İngilizce çevirisi kullanılır.
+//  • PARANTEZ: yukarıdaki alfabe ayrımından BAĞIMSIZ olarak, Türkçe ad ana
+//    başlıktan farklıysa her zaman parantez içinde eklenir. Sadece iki
+//    durumda parantez açılmaz: (1) yapım zaten Türkçe ise, (2) Türkçe ad
+//    ana başlıkla birebir aynıysa.
+//  • Türkçe ad henüz gelmemişse "pending" işaretlenir; ekranda görününce
 //    arka planda TMDB'den çekilip parantez sonradan eklenir (bkz. hydrateAltTitles).
 function dispParts(e){
   const t  = tmdbTitles(e);
   const tr = t.titleTr, en = t.titleEn, orig = t.origTitle;
   const ol = (t.origLang||'').toLowerCase();
 
-  const latin = ol ? LATIN_LANGS.has(ol) : isLatinText(orig || en || tr);
-  if(latin){
-    const main = (orig && isLatinText(orig)) ? orig : (en || tr || orig);
-    return { main: main || '—', alt: '', pending:false };
-  }
-  // Latin dışı: İngilizce ana, Türkçe parantezde
-  const main = isLatinText(en) ? (en || tr || orig) : (isLatinText(tr) ? tr : (isLatinText(orig) ? orig : (en||tr||orig)));
-  if(!main) return { main: orig || '—', alt:'', pending:false };
-  if(!tr)                    return { main, alt:'', pending: isLatinText(main) };  // TR henüz gelmedi → sonradan doldurulacak
-  if(nrm(main) === nrm(tr))  return { main, alt:'', pending:false };               // zaten aynıysa parantez gereksiz
+  const origReadable = ol ? LATIN_LANGS.has(ol) : isLatinText(orig || en || tr);
+  let main = origReadable
+    ? (orig || en || tr)
+    : (isLatinText(en) ? en : (isLatinText(tr) ? tr : (orig || en || tr)));
+  if(!main) main = orig || en || tr || '—';
+
+  if(ol === 'tr') return { main, alt:'', pending:false };          // zaten Türkçe → parantez gereksiz
+  if(!tr)         return { main, alt:'', pending:true };            // TR henüz yok → sonradan doldurulacak
+  if(nrm(main) === nrm(tr)) return { main, alt:'', pending:false }; // aynı isim → parantez gereksiz
   return { main, alt: tr, pending:false };
 }
 function dispTitleText(e){ const p = dispParts(e); return p.alt ? p.main+' ('+p.alt+')' : p.main; }
@@ -796,10 +797,10 @@ async function hydrateAltTitles(){
 function titleNeedsFix(e){
   const id = e.tmdbId || e.id;
   if(!/^\d+$/.test(String(id))) return false;
-  if(!e.origLang) return true;                                   // dil hiç bilinmiyor
+  if(!e.origLang) return true;                 // dil hiç bilinmiyor
   const ol = e.origLang.toLowerCase();
-  if(LATIN_LANGS.has(ol)) return !e.origTitle;                   // Latin → orijinal ad şart
-  return !e.titleEn || !e.titleTr;                               // Latin dışı → EN+TR şart
+  if(ol === 'tr') return !e.origTitle;         // zaten Türkçe → sadece orijinal ad yeter, parantez gerekmez
+  return !e.origTitle || !e.titleEn || !e.titleTr;  // her dilde: orijinal + EN + TR (parantez için) şart
 }
 
 // Eksik başlıkları TMDB'den sessizce doldurur (parça parça, 20'şer)
@@ -830,12 +831,12 @@ async function hydrateTitles(){
         origLang:  en.original_language || 'en',
         tmdbId:    j.id
       };
-      if(!LATIN_LANGS.has((patch.origLang||'').toLowerCase())){
+      if((patch.origLang||'').toLowerCase() === 'tr'){
+        patch.titleTr = patch.titleTr || patch.origTitle;
+      } else {
         await new Promise(r=>setTimeout(r,110));
         const tr = await fetch(`${TMDB_BASE}/${kind}/${j.id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json());
         patch.titleTr = tr.title || tr.name || patch.titleEn;
-      } else {
-        patch.titleTr = patch.titleTr || patch.origTitle;
       }
 
       if(j.src==='shared'){
@@ -2994,7 +2995,7 @@ async function buildDiscover(force){
   if(discBusy) return;
   const el = document.getElementById('discoverList');
   const cached = lsGet('cm_discover_'+(user?.name||''));
-  if(!force && cached && cached.v===4 && Date.now()-cached.ts < 24*60*60*1000){
+  if(!force && cached && cached.v===5 && Date.now()-cached.ts < 24*60*60*1000){
     discData = cached; renderDiscover(); return;
   }
 
@@ -3219,9 +3220,8 @@ async function buildDiscover(force){
 
     score += (bayes - 6.4) * 1.5;
 
-    // gizli mücevher: çok iyi ama herkesin bilmediği
-    const gem = bayes >= 7.25 && v >= 400 && v <= 22000;
-    if(gem) score += 1.5;
+    // az bilinen ama gerçekten kaliteli yapımlara küçük bir görünürlük bonusu
+    if(bayes >= 7.25 && v >= 400 && v <= 22000) score += 1.5;
     if(v > 90000) score -= 0.6;                 // herkesin bildiği → muhtemelen görülmüş
     if(v < 250) score -= 0.9;
 
@@ -3235,7 +3235,7 @@ async function buildDiscover(force){
     const isTv = x.media_type==='tv';
     score *= isTv ? (0.5 + tvShare*1.0) : (0.5 + movieShare*1.0);
 
-    return { id:k, item:x, reasons:o.seeds, people:o.people, owner, gem,
+    return { id:k, item:x, reasons:o.seeds, people:o.people, owner,
              gf:Math.round(gf*100), bayes:Math.round(bayes*10)/10, src:o.src, score };
     // not: 'id' burada "tür:tmdbId" birleşik anahtarı — kart bazında benzersizliği garanti eder
   }).filter(Boolean);
@@ -3260,8 +3260,7 @@ async function buildDiscover(force){
   const trCache = trTitleCache();
   for(const it of top){
     const x = it.item;
-    const olLatin = x.origLang ? LATIN_LANGS.has((x.origLang||'').toLowerCase()) : isLatinText(x.origTitle);
-    if(olLatin || x.titleTr) continue;
+    if((x.origLang||'').toLowerCase()==='tr' || x.titleTr) continue;
     const key = (x.media_type==='tv'?'t':'m')+x.id;
     if(trCache[key] !== undefined){ x.titleTr = trCache[key] || ''; continue; }
     try{
@@ -3273,16 +3272,11 @@ async function buildDiscover(force){
   }
   lsSet('cm_tr_title_cache', trCache);
 
-  const max = top.length ? top[0].score : 1;
-  top.forEach(it=>{
-    it.match = (max>0.01 && it.score>0) ? Math.max(40, Math.min(99, Math.round((it.score/max)*99))) : 45;
-  });
-
-  discData = { v:4, ts:Date.now(), seeds:pos.length,
+  discData = { v:5, ts:Date.now(), seeds:pos.length,
     topGenres: topGenres.map(g=>GENRE_NAMES[g]||g),
     people: topPeople.slice(0,4).map(p=>p.name),
-    items: top.map(x=>({ id:x.id, owner:x.owner, reasons:x.reasons, people:x.people, gem:x.gem,
-                         match:x.match, gf:x.gf, bayes:x.bayes, src:x.src, item:x.item })) };
+    items: top.map(x=>({ id:x.id, owner:x.owner, reasons:x.reasons, people:x.people,
+                         gf:x.gf, bayes:x.bayes, src:x.src, item:x.item })) };
   lsSet('cm_discover_'+(user?.name||''), discData);
   discBusy = false;
   renderDiscover();
@@ -3331,7 +3325,6 @@ function renderDiscover(){
 
     const tags = [];
     if(x.owner) tags.push(`<div class="own-tag">📋 ${esc(x.owner)} listesinde duruyor</div>`);
-    if(x.gem)   tags.push(`<div class="own-tag gem">💎 Az bilinen mücevher · ${x.bayes}</div>`);
 
     return `<div class="lrow">
       ${poster}
@@ -3342,7 +3335,6 @@ function renderDiscover(){
           ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
           ${it.vote_average>0?`<span style="font-size:11px;color:var(--gold)">⭐${it.vote_average.toFixed(1)}</span>`:''}
           ${imdbBadge(it.id, tv)}
-          <span class="matchb" title="Zevk profilinizle uyum">%${x.match} uyum</span>
         </div>
         ${tags.join('')}
         <div class="lnote">${why}</div>
@@ -3358,15 +3350,10 @@ function renderDiscover(){
 
   const inList = list.filter(x=>x.owner);
   const rest   = list.filter(x=>!x.owner);
-  const strong = rest.slice(0,14);
-  const gems   = rest.slice(14).filter(x=>x.gem);
-  const other  = rest.slice(14).filter(x=>!x.gem);
 
   let html = '';
   if(inList.length) html += `<div class="disc-head">📋 Listelerinizde duranlar <span>${inList.length}</span></div>` + inList.map(card).join('');
-  if(strong.length) html += `<div class="disc-head">⭐ En güçlü eşleşmeler <span>${strong.length}</span></div>` + strong.map(card).join('');
-  if(gems.length)   html += `<div class="disc-head">💎 Az bilinen mücevherler <span>${gems.length}</span></div>` + gems.map(card).join('');
-  if(other.length)  html += `<div class="disc-head">🆕 Diğer öneriler <span>${other.length}</span></div>` + other.map(card).join('');
+  if(rest.length)   html += `<div class="disc-head">✨ Sizin İçin Seçtiklerimiz <span>${rest.length}</span></div>` + rest.map(card).join('');
   el.innerHTML = html;
   afterRender();
 }
