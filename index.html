@@ -179,11 +179,11 @@ img{display:block}
 .modal-info{flex:1;min-width:0}
 .modal-title{font-family:'Playfair Display',serif;font-size:17px;line-height:1.3;margin-bottom:5px}
 .modal-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.dest-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
-.dest-btn{padding:6px 5px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:11px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:border-color .2s,background .2s,color .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.18;height:70px;box-sizing:border-box;overflow:hidden}
+.dest-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
+.dest-btn{padding:3px 4px;border-radius:10px;border:2px solid var(--s3);background:var(--s2);font-size:10.5px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;transition:border-color .2s,background .2s,color .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1.15;height:50px;box-sizing:border-box;overflow:hidden}
 .dest-btn:hover{border-color:var(--gold);color:var(--t1)}
 .dest-btn.on{border-color:var(--gold);background:var(--goldbg);color:var(--gold)}
-.dest-btn small{font-weight:400;color:var(--t3);font-size:10.5px}
+.dest-btn small{font-weight:400;color:var(--t3);font-size:9px}
 .dest-btn.on small{color:var(--gold);opacity:.7}
 .modal-sect{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:8px}
 #starsRow{display:flex;gap:4px;margin-bottom:4px}
@@ -274,6 +274,14 @@ img{display:block}
 .recap-bar-n{font-size:10px;color:var(--t3);width:16px;text-align:right;flex-shrink:0}
 .recap-top{font-size:11.5px;color:var(--t2);margin-top:8px;padding-top:8px;border-top:1px dashed var(--s3)}
 .recap-empty{font-size:12px;color:var(--t3);padding:6px 0}
+.ldate{font-size:11px;color:var(--t3);white-space:nowrap}
+.prov-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;align-items:center}
+.pchip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border-radius:20px;border:1px solid var(--s3);background:var(--s2);color:var(--t2);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.pchip img{width:20px;height:20px;border-radius:5px;object-fit:cover}
+.pchip.noimg{padding-left:10px}
+.pchip.on{border-color:var(--gold);background:var(--goldbg);color:var(--gold)}
+.pchip em{font-style:normal;font-size:10px;color:var(--t3);font-weight:700}
+.pchip-note{font-size:11px;color:var(--t3)}
 .prov-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:0}
 .prov-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px}
 .prov-logo{width:26px;height:26px;border-radius:6px;object-fit:cover;border:1px solid var(--s3)}
@@ -431,6 +439,7 @@ img{display:block}
       </div>
     </div>
     <div style="position:relative;margin:0 0 12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span><input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="İzleyeceklerimizde ara…" oninput="filterWatchlist(this.value)"/></div>
+    <div class="prov-filter" id="provFilter-watchlist"></div>
     <div id="watchlistList"></div>
   </div>
 
@@ -486,6 +495,7 @@ img{display:block}
       </div>
     </div>
     <div style="position:relative;margin:0 0 12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span><input class="inp" style="padding-left:34px;width:100%;box-sizing:border-box" autocomplete="off" placeholder="Listemde ara…" oninput="filterPersonal(this.value)"/></div>
+    <div class="prov-filter" id="provFilter-personal"></div>
     <div id="personalList"></div>
   </div>
 
@@ -811,24 +821,94 @@ async function hydrateAltTitles(){
   if(document.querySelectorAll('.title-pending').length) setTimeout(hydrateAltTitles, 500);
 }
 
+// ── Bellek içi önbellek (localStorage'a gecikmeli yazar; büyük listelerde hızlı) ──
+const _mem = {}, _memTimers = {};
+function memGet(name){ if(!_mem[name]) _mem[name] = lsGet(name) || {}; return _mem[name]; }
+function memSave(name){ clearTimeout(_memTimers[name]); _memTimers[name] = setTimeout(()=>lsSet(name, _mem[name]), 800); }
+const _sleep = ms => new Promise(r=>setTimeout(r, ms));
+
+// ── Başlık+yıl ile TMDB kaydını bulur (Letterboxd gibi sayısal id'si olmayan kayıtlar için) ──
+function resolveKey(title, year){ return nrm(title)+'|'+(year||''); }
+function resolveCached(title, year){
+  const c = memGet('cm_resolve_cache')[resolveKey(title, year)];
+  return c && c.hit ? c.hit : null;
+}
+async function resolveByTitle(title, year, tvHint){
+  if(!title) return null;
+  const cache = memGet('cm_resolve_cache');
+  const key = resolveKey(title, year);
+  const c = cache[key];
+  if(c && (c.hit || Date.now()-c.ts < 3*864e5)) return c.hit;
+  try{
+    const q = encodeURIComponent(title);
+    const [tr, en] = await Promise.all([
+      fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=tr-TR`).then(r=>r.json()),
+      fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${q}&language=en-US`).then(r=>r.json())
+    ]);
+    const ok = x => (x.media_type==='movie'||x.media_type==='tv');
+    const trList = (tr.results||[]).filter(ok), enList = (en.results||[]).filter(ok);
+    const all = [...enList];
+    trList.forEach(x=>{ if(!all.find(y=>y.id===x.id && y.media_type===x.media_type)) all.push(x); });
+    const yr = x => (x.release_date||x.first_air_date||'').slice(0,4);
+    const nt = nrm(title);
+    let pool = all;
+    if(year){
+      pool = all.filter(x=>Math.abs((+yr(x)||0)-(+year))<=1);
+    }
+    if(tvHint !== undefined){
+      const typed = pool.filter(x=>(x.media_type==='tv')===!!tvHint);
+      if(typed.length) pool = typed;
+    }
+    const score = x => {
+      let sc = 0;
+      if(year && yr(x)===String(year)) sc += 3;
+      const names = [x.title,x.name,x.original_title,x.original_name].map(nrm);
+      if(names.includes(nt)) sc += 4;
+      return sc + Math.min(1,(x.popularity||0)/100);
+    };
+    pool.sort((a,b)=>score(b)-score(a));
+    const hit = pool[0];
+    // Yıl biliniyorsa ve ad hiç benzemiyorsa tahmin yürütme
+    if(!hit || (year ? score(hit) < 3 : score(hit) < 4)){ cache[key] = { hit:null, ts:Date.now() }; memSave('cm_resolve_cache'); return null; }
+    const enHit = enList.find(x=>x.id===hit.id && x.media_type===hit.media_type) || hit;
+    const trHit = trList.find(x=>x.id===hit.id && x.media_type===hit.media_type);
+    const out = {
+      id: hit.id, tv: hit.media_type==='tv',
+      origLang: hit.original_language||'', origTitle: hit.original_title||hit.original_name||'',
+      titleEn: enHit.title||enHit.name||'', titleTr: trHit ? (trHit.title||trHit.name||'') : '',
+      poster: hit.poster_path||'', vote: hit.vote_average||0,
+      overviewTr: trHit ? (trHit.overview||'') : ''
+    };
+    cache[key] = { hit: out, ts: Date.now() };
+    memSave('cm_resolve_cache');
+    return out;
+  }catch(e){ return null; }
+}
+
 // Bir kaydın başlık bilgisi eksik mi?
 function titleNeedsFix(e){
+  if(!e) return false;
   const id = e.tmdbId || e.id;
-  if(!/^\d+$/.test(String(id))) return false;
-  if(!e.origLang) return true;                 // dil hiç bilinmiyor
+  if(!/^\d+$/.test(String(id))) return !e.idTried && !!e.title;   // sayısal id yok → başlıkla çözümlenecek
+  if(e.titleFixedAt) return false;
+  if(!e.origLang) return true;
   const ol = e.origLang.toLowerCase();
-  if(ol === 'tr') return !e.origTitle;         // zaten Türkçe → sadece orijinal ad yeter, parantez gerekmez
-  return !e.origTitle || !e.titleEn || !e.titleTr;  // her dilde: orijinal + EN + TR (parantez için) şart
+  if(ol === 'tr') return !e.origTitle;
+  return !e.origTitle || !e.titleEn || !e.titleTr;
 }
 
 // Eksik başlıkları TMDB'den sessizce doldurur (parça parça, 20'şer)
 let _titleBusy = false, _titleRuns = 0;
+const _titleSkip = {};
 async function hydrateTitles(){
   if(_titleBusy || !user) return;
   const jobs = [];
   const scan = (lib, src) => Object.keys(lib||{}).forEach(k=>{
     const e = lib[k];
-    if(e && titleNeedsFix(e)) jobs.push({ src, key:k, id:String(e.tmdbId||e.id), tv:!!e.tv });
+    if(e && !_titleSkip[src+':'+k] && titleNeedsFix(e)){
+      const id = e.tmdbId || e.id;
+      jobs.push({ src, key:k, id:String(id), tv:!!e.tv, resolve: !/^\d+$/.test(String(id)) });
+    }
   });
   scan(sharedLib,'shared'); scan(getMyLog(),'mylog'); scan(personalLib,'personal');
   if(!jobs.length){ _titleRuns = 0; return; }
@@ -837,49 +917,257 @@ async function hydrateTitles(){
   const batch = jobs.slice(0,20);
   const log = getMyLog();
   let touchedLog = false, touchedPersonal = false, changed = 0;
+  const entryOf = j => j.src==='shared' ? sharedLib[j.key] : (j.src==='mylog' ? log[j.key] : personalLib[j.key]);
 
   for(const j of batch){
+    const entry = entryOf(j);
+    if(!entry) continue;
     try{
-      const kind = j.tv ? 'tv' : 'movie';
-      const en = await fetch(`${TMDB_BASE}/${kind}/${j.id}?api_key=${TMDB_KEY}&language=en-US`).then(r=>r.json());
-      if(en.status_code || (!en.title && !en.name)) throw 0;
-      const patch = {
-        titleEn:   en.title || en.name || '',
-        origTitle: en.original_title || en.original_name || '',
-        origLang:  en.original_language || 'en',
-        tmdbId:    j.id
-      };
-      if((patch.origLang||'').toLowerCase() === 'tr'){
-        patch.titleTr = patch.titleTr || patch.origTitle;
+      let patch;
+      if(j.resolve){
+        const r = await resolveByTitle(entry.title, entry.year, !!entry.tv);
+        if(!r){ patch = { idTried:true }; }
+        else {
+          patch = {
+            tmdbId:String(r.id), tv:r.tv, origLang:r.origLang||'en', origTitle:r.origTitle||entry.title,
+            titleEn:r.titleEn||entry.title, titleTr:r.titleTr||r.titleEn||entry.title, titleFixedAt:Date.now()
+          };
+          if((!entry.poster || entry.poster==='N/A') && r.poster) patch.poster = r.poster;
+          if(!entry.score && r.vote) patch.score = r.vote;
+        }
       } else {
-        await new Promise(r=>setTimeout(r,110));
-        const tr = await fetch(`${TMDB_BASE}/${kind}/${j.id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json());
-        patch.titleTr = tr.title || tr.name || patch.titleEn;
+        const kind = j.tv ? 'tv' : 'movie';
+        const en = await fetch(`${TMDB_BASE}/${kind}/${j.id}?api_key=${TMDB_KEY}&language=en-US`).then(r=>r.json());
+        if(en.status_code || (!en.title && !en.name)){ patch = { titleFixedAt:Date.now() }; }
+        else {
+          patch = {
+            titleEn:   en.title || en.name || '',
+            origTitle: en.original_title || en.original_name || '',
+            origLang:  en.original_language || 'en',
+            tmdbId:    j.id, titleFixedAt: Date.now()
+          };
+          if((patch.origLang||'').toLowerCase() === 'tr'){
+            patch.titleTr = entry.titleTr || patch.origTitle;
+          } else {
+            await _sleep(110);
+            const tr = await fetch(`${TMDB_BASE}/${kind}/${j.id}?api_key=${TMDB_KEY}&language=tr-TR`).then(r=>r.json());
+            patch.titleTr = tr.title || tr.name || patch.titleEn;
+          }
+        }
       }
-
-      if(j.src==='shared'){
-        if(sharedLib[j.key]){ Object.assign(sharedLib[j.key], patch); if(db) db.ref('sharedLib/'+j.key).update(patch).catch(()=>{}); changed++; }
-      } else if(j.src==='mylog'){
-        if(log[j.key]){ Object.assign(log[j.key], patch); touchedLog = true; changed++; }
-      } else if(j.src==='personal'){
-        if(personalLib[j.key]){ Object.assign(personalLib[j.key], patch); touchedPersonal = true; changed++; }
-      }
-    }catch(e){
-      // Bulunamayan kayıtları tekrar tekrar denememek için işaretle
-      if(j.src==='mylog' && log[j.key]){ log[j.key].origLang = log[j.key].origLang || 'en'; log[j.key].origTitle = log[j.key].origTitle || log[j.key].title; touchedLog = true; }
-      if(j.src==='personal' && personalLib[j.key]){ personalLib[j.key].origLang = personalLib[j.key].origLang || 'en'; personalLib[j.key].origTitle = personalLib[j.key].origTitle || personalLib[j.key].title; touchedPersonal = true; }
-      if(j.src==='shared' && sharedLib[j.key]){ sharedLib[j.key].origLang = sharedLib[j.key].origLang || 'en'; sharedLib[j.key].origTitle = sharedLib[j.key].origTitle || sharedLib[j.key].title; }
+      Object.assign(entry, patch);
+      if(j.src==='shared'){ if(db) db.ref('sharedLib/'+j.key).update(patch).catch(()=>{}); }
+      else if(j.src==='mylog') touchedLog = true;
+      else touchedPersonal = true;
+      changed++;
+    }catch(err){
+      _titleSkip[j.src+':'+j.key] = true;   // bu oturumda tekrar deneme
     }
-    await new Promise(r=>setTimeout(r,130));
+    await _sleep(130);
   }
 
   if(touchedLog)      saveMyLog(log);
   if(touchedPersonal) savePersonal();
   _titleBusy = false;
 
-  if(changed) rerenderActive();
+  if(changed){ rerenderActive(); cleanPersonalOverlap(); }
   _titleRuns++;
-  if(jobs.length > batch.length && _titleRuns < 40) setTimeout(hydrateTitles, 2500);
+  if(jobs.length > batch.length && _titleRuns < 80) setTimeout(hydrateTitles, 2500);
+}
+
+// ════════════════════════════════════════════════════════════════
+// TARİH + NOT gösterimi
+// ════════════════════════════════════════════════════════════════
+function dateChip(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  if(isNaN(d.getTime())) return '';
+  return `<span class="ldate" title="Eklenme tarihi">📅 ${d.toLocaleDateString('tr-TR')}</span>`;
+}
+// Paylaşılan kayıtlardaki kişi başı notlar
+function notesHtml(e){
+  const notes = e && e.notes ? e.notes : {};
+  return Object.keys(notes).filter(n=>notes[n]).map(n=>{
+    const who = USERS.find(u=>u.name===n) ? emoji(n) : '💬';
+    return `<div class="lnote">${who} “${esc(notes[n])}”</div>`;
+  }).join('');
+}
+function ownNoteFor(item){
+  const ex = sharedLib[String((item && (item.tmdbId||item.id))||'')] || sharedLib[String((item && item.id)||'')];
+  return (ex && ex.notes && ex.notes[user.name]) || '';
+}
+
+// ════════════════════════════════════════════════════════════════
+// LİSTEM temizliği — izlenen bir şey Listem'de kalmasın
+// ════════════════════════════════════════════════════════════════
+function tombGet(){ return lsGet('cm_personal_tomb_'+(user?.name||'')) || {}; }
+function tombAdd(keys){
+  const t = tombGet(); keys.forEach(k=>{ t[k] = Date.now(); });
+  lsSet('cm_personal_tomb_'+(user?.name||''), t);
+}
+function findPersonalKeysFor(item){
+  const t = tmdbTitles(item);
+  const id = String(item.tmdbId || item.id || '');
+  const names = [item.title, item.name, t.titleEn, t.titleTr, t.origTitle].map(nrm).filter(x=>x.length>1);
+  const yr = String(t.year || item.year || '');
+  return Object.keys(personalLib).filter(k=>{
+    const e = personalLib[k];
+    const eid = String(e.tmdbId || e.id || '');
+    if(/^\d+$/.test(id) && eid === id) return true;
+    const ey = String(e.year || '');
+    if(yr && ey && yr !== ey) return false;
+    const en = [e.title, e.titleEn, e.titleTr, e.origTitle].map(nrm).filter(x=>x.length>1);
+    return en.some(x=>names.includes(x));
+  });
+}
+function removeFromPersonalFor(item){
+  const keys = findPersonalKeysFor(item);
+  if(!keys.length) return 0;
+  keys.forEach(k=>{ delete personalLib[k]; });
+  tombAdd(keys);
+  savePersonal();
+  if(activeTab()==='personal') renderPersonal();
+  return keys.length;
+}
+function cleanPersonalOverlap(){
+  if(!user || !Object.keys(personalLib).length) return;
+  const idx = { ids:{}, keys:{} };
+  const add = e => {
+    const id = String(e.tmdbId || e.id || '');
+    if(/^\d+$/.test(id)) idx.ids[id] = 1;
+    const y = String(e.year || '');
+    if(!y) return;
+    [e.title, e.titleEn, e.titleTr, e.origTitle].map(nrm).filter(x=>x.length>2).forEach(n=>{ idx.keys[n+'|'+y] = 1; });
+  };
+  Object.values(sharedLib).filter(e=>e.status==='watched').forEach(add);
+  Object.values(getMyLog()).forEach(add);
+  const gone = [];
+  Object.keys(personalLib).forEach(k=>{
+    const e = personalLib[k];
+    const id = String(e.tmdbId || e.id || '');
+    const y = String(e.year || '');
+    const hit = (/^\d+$/.test(id) && idx.ids[id]) ||
+      (y && [e.title, e.titleEn, e.titleTr, e.origTitle].map(nrm).some(n=>n.length>2 && idx.keys[n+'|'+y]));
+    if(hit) gone.push(k);
+  });
+  if(!gone.length) return;
+  const backup = {}; gone.forEach(k=>{ backup[k] = personalLib[k]; delete personalLib[k]; });
+  tombAdd(gone);
+  savePersonal();
+  if(activeTab()==='personal') renderPersonal();
+  showToast('🧹 '+gone.length+' yapım zaten izlendiği için Listem’den çıkarıldı', ()=>{
+    Object.assign(personalLib, backup);
+    const t = tombGet(); gone.forEach(k=>{ delete t[k]; });
+    lsSet('cm_personal_tomb_'+user.name, t);
+    savePersonal(); if(activeTab()==='personal') renderPersonal();
+    showToast('↩ Geri alındı!');
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// PLATFORM FİLTRESİ (İzleyeceğiz + Listem) — TMDB watch/providers, TR bölgesi
+// ════════════════════════════════════════════════════════════════
+const provSel = { watchlist:'', personal:'' };
+const _provSkip = {}, _provBusy = {};
+function provKey(id, tv){ return (tv?'t':'m')+id; }
+async function fetchProviders(id, tv){
+  const cache = memGet('cm_prov_cache');
+  const k = provKey(id, tv);
+  if(cache[k] && Date.now()-cache[k].ts < 7*864e5) return cache[k].v;
+  const d = await fetch(`${TMDB_BASE}/${tv?'tv':'movie'}/${id}/watch/providers?api_key=${TMDB_KEY}`).then(r=>r.json());
+  const tr = (d.results||{}).TR || {};
+  const seen = {};
+  const list = [...(tr.flatrate||[]), ...(tr.free||[]), ...(tr.ads||[])]
+    .filter(p=>{ if(seen[p.provider_id]) return false; seen[p.provider_id]=1; return true; })
+    .map(p=>({ name:p.provider_name, logo:p.logo_path }));
+  cache[k] = { v:list, ts:Date.now() };
+  memSave('cm_prov_cache');
+  return list;
+}
+function refOf(e){
+  let id = e.tmdbId || e.id, tv = !!e.tv;
+  if(/^\d+$/.test(String(id))) return { id:String(id), tv };
+  const r = resolveCached(e.title, e.year);
+  return r ? { id:String(r.id), tv:r.tv } : null;
+}
+function provsOfEntry(e){
+  const ref = refOf(e);
+  if(!ref) return null;
+  const c = memGet('cm_prov_cache')[provKey(ref.id, ref.tv)];
+  return c ? c.v : null;
+}
+const _provItems = {};
+function kickProviders(tab, items){
+  _provItems[tab] = items;
+  if(_provBusy[tab]) return;
+  if(!items.some(e=>provsOfEntry(e)===null && !_provSkip[(e.id||'')+e.title])) return;
+  ensureProviders(tab);
+}
+async function ensureProviders(tab){
+  _provBusy[tab] = true;
+  try{
+    let n = 0;
+    const items = (_provItems[tab]||[]).slice();
+    for(const e of items){
+      if(activeTab()!==tab) break;
+      if(provsOfEntry(e)!==null) continue;
+      const sk = (e.id||'')+e.title;
+      try{
+        let ref = refOf(e);
+        if(!ref){
+          const r = await resolveByTitle(e.title, e.year, !!e.tv);
+          if(!r){ _provSkip[sk] = true; continue; }
+          ref = { id:String(r.id), tv:r.tv };
+        }
+        await fetchProviders(ref.id, ref.tv);
+        n++;
+        if(n % 6 === 0) renderProvFilter(tab, _provItems[tab]||items);
+        await _sleep(110);
+      }catch(err){ _provSkip[sk] = true; }
+    }
+  } finally {
+    _provBusy[tab] = false;
+    renderProvFilter(tab, _provItems[tab]||[]);
+    if(provSel[tab] && activeTab()===tab){ tab==='watchlist' ? renderWatchlist() : renderPersonal(); }
+  }
+}
+function renderProvFilter(tab, items){
+  const el = document.getElementById('provFilter-'+tab);
+  if(!el) return;
+  const map = {}; let known = 0, none = 0;
+  (items||[]).forEach(e=>{
+    const l = provsOfEntry(e);
+    if(l === null) return;
+    known++;
+    if(!l.length){ none++; return; }
+    l.forEach(p=>{ (map[p.name] = map[p.name] || { name:p.name, logo:p.logo, n:0 }).n++; });
+  });
+  const list = Object.values(map).sort((a,b)=>b.n-a.n);
+  const sel = provSel[tab];
+  const total = (items||[]).length;
+  if(!total || (!list.length && !none && known===0 && !_provBusy[tab])){ el.innerHTML = ''; return; }
+  const chip = (val, label, n, logo) =>
+    `<button class="pchip ${logo?'':'noimg'} ${sel===val?'on':''}" data-p="${esc(val)}" onclick="setProvFilter('${tab}', this.dataset.p)">`
+    + (logo ? `<img src="https://image.tmdb.org/t/p/w92${logo}" alt=""/>` : '')
+    + `${esc(label)}${n!=null?` <em>${n}</em>`:''}</button>`;
+  let html = '<span class="prov-lbl">Nerede izlenir:</span>' + chip('', 'Tümü', total);
+  list.forEach(p=>{ html += chip(p.name, p.name, p.n, p.logo); });
+  if(none) html += chip('__none', 'Platformu yok', none);
+  if(known < total) html += `<span class="pchip-note">⏳ platform bilgisi yükleniyor (${known}/${total})</span>`;
+  el.innerHTML = html;
+}
+function setProvFilter(tab, v){
+  provSel[tab] = (provSel[tab] === v) ? '' : v;
+  tab==='watchlist' ? renderWatchlist() : renderPersonal();
+}
+function applyProvFilter(tab, items){
+  const sel = provSel[tab];
+  if(!sel) return items;
+  return items.filter(e=>{
+    const l = provsOfEntry(e);
+    if(l === null) return false;
+    return sel==='__none' ? !l.length : l.some(p=>p.name===sel);
+  });
 }
 
 // Kayıtlı bir girdiyi modalın beklediği TMDB formatına çevirir
@@ -1040,7 +1328,13 @@ function startApp(){
     if(Object.keys(fbPersonal).length > 0){
       const localPersonal = lsGet('cm_personal_'+user.name) || {};
       personalLib = Object.assign({}, fbPersonal, localPersonal);
+      const tomb = tombGet();
+      let dropped = 0;
+      Object.keys(tomb).forEach(k=>{
+        if(personalLib[k] && (personalLib[k].addedAt||0) <= tomb[k]){ delete personalLib[k]; dropped++; }
+      });
       lsSet('cm_personal_'+user.name, personalLib);
+      if(dropped) db.ref('userPersonal/'+user.name).set(personalLib).catch(()=>{});
       updateCounts();
       if(activeTab()==='personal') renderPersonal();
     }
@@ -1082,6 +1376,7 @@ function startApp(){
   setTimeout(fetchMissingPosters, 3000);
   setTimeout(renderAlertBadge, 500);
   setTimeout(checkAutoRecap, 5000);
+  setTimeout(cleanPersonalOverlap, 7000);
   setTimeout(refreshShowInfoSilently, 8000);
   setTimeout(()=>checkNewSeasons(false), 45000);
   setInterval(()=>checkNewSeasons(false), 3*60*60*1000);
@@ -1174,7 +1469,7 @@ function computeRecap(type, y, m){
   const inRange = (ts) => ts >= start && ts < end;
 
   const together = Object.values(sharedLib)
-    .filter(e => e.status==='watched' && inRange(e.addedAt||0))
+    .filter(e => e.status==='watched' && inRange(e.watchedAt||e.addedAt||0))
     .map(e => ({ tv:!!e.tv, genres:extractGenres(e.raw), title:dispTitleText(e), rating:avgRatingOf(e) }));
 
   const mineRaw = Object.values(getMyLog())
@@ -1751,8 +2046,9 @@ function renderWatched(){
           <div class="ltitle">${dispTitleHtml(e)}</div>
           <div style="display:flex;gap:3px;flex-shrink:0">${watcherIcons||(`<span style="font-size:15px">${emoji(e.addedBy||'Fox')}</span>`)}</div>
         </div>
-        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}${dateChip(e.watchedAt||e.addedAt)}</div>
         ${ratingHtml?`<div class="lratings">${ratingHtml}</div>`:''}
+        ${notesHtml(e)}
         <div class="lactions">
           <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Düzenle</button>
           <button class="btn bred bxs" onclick="removeShared('${e.id}')">Kaldır</button>
@@ -1769,6 +2065,9 @@ function renderWatchlist(){
   if(f==='tv')    items = items.filter(e=>!!e.tv);
   if(watchlistQ) items=items.filter(e=>matchQ(e,watchlistQ));
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  kickProviders('watchlist', items);
+  renderProvFilter('watchlist', items);
+  items = applyProvFilter('watchlist', items);
   document.getElementById('watchlistCnt').textContent = items.length+' yapım';
   afterRender();
   const el = document.getElementById('watchlistList');
@@ -1786,7 +2085,8 @@ function renderWatchlist(){
           <div class="ltitle">${dispTitleHtml(e)}</div>
           <div style="display:flex;gap:3px;flex-shrink:0">${wlIcons}</div>
         </div>
-        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}${dateChip(e.addedAt)}</div>
+        ${notesHtml(e)}
         <div class="lactions">
           <button class="btn bgreen bxs" onclick="markWatched('${e.id}')">✓ İzledik!</button>
           <button class="btn bghost bxs" onclick="openModal(getCached('${ck}'))">Düzenle</button>
@@ -1830,7 +2130,7 @@ function renderSuggestions(){
       ${poster}
       <div class="lbody">
         <div class="ltitle">${dispTitleHtml(sug)}</div>
-        <div class="lmeta"><span class="chip ${sug.tv?'ctv':'cmovie'}">${sug.tv?'Dizi':'Film'}</span>${sug.year?`<span style="font-size:11px;color:var(--t3)">${sug.year}</span>`:''}</div>
+        <div class="lmeta"><span class="chip ${sug.tv?'ctv':'cmovie'}">${sug.tv?'Dizi':'Film'}</span>${sug.year?`<span style="font-size:11px;color:var(--t3)">${sug.year}</span>`:''}${dateChip(sug.ts)}</div>
         <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3);margin-bottom:4px">
           <span style="font-size:15px">${emoji(sug.suggestedBy||'Fox')}</span>
           <strong style="color:var(--t2)">${sug.suggestedBy||'?'}</strong> önerdi
@@ -2020,8 +2320,10 @@ function renderOngoing(){
           ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
           ${epBadge}
           ${nextEpBadge(item)}
+          ${dateChip(item.addedAt)}
         </div>
         ${rFox||rBun ? `<div style="font-size:11px;color:var(--gold);margin:4px 0">${rFox} ${rBun}</div>` : ''}
+        ${notesHtml(item)}
         <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
           <button class="btn bgold bxs" onclick="openEpisodeModal('${item.id}','${safeTitle}')">📍 Bölüm</button>
           <button class="btn bgreen bxs" onclick="markOngoingWatched('${item.id}')">✓ Bitti</button>
@@ -2265,6 +2567,9 @@ function renderPersonal(){
   if(personalFilter==='tv')    items = items.filter(e=>!!e.tv);
   if(personalQ) items=items.filter(e=>matchQ(e,personalQ));
   items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  kickProviders('personal', items);
+  renderProvFilter('personal', items);
+  items = applyProvFilter('personal', items);
   document.getElementById('personalSub').textContent = items.length+' içerik';
   const el = document.getElementById('personalList');
   if(!items.length){
@@ -2284,6 +2589,7 @@ function renderPersonal(){
         <div class="lmeta">
           <span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>
           ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
+          ${dateChip(e.addedAt)}
         </div>
         ${e.note&&e.note!=='Letterboxd watchlist'?`<div class="lnote">"${e.note}"</div>`:''}
         <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
@@ -2303,6 +2609,7 @@ function renderPersonal(){
 function removePersonal(id){
   const backup = personalLib[id] ? Object.assign({}, personalLib[id]) : null;
   delete personalLib[id];
+  tombAdd([id]);
   savePersonal();
   renderPersonal();
   showToast('🗑️ Silindi', backup ? ()=>{
@@ -2329,7 +2636,7 @@ async function personalToWatched(id){
       addedBy:user.name, addedAt:Date.now()
     }));
     const backup = Object.assign({}, e);
-    delete personalLib[id]; savePersonal(); renderPersonal();
+    delete personalLib[id]; tombAdd([id]); savePersonal(); renderPersonal();
     invalidateDiscoverCache();
     showToast('✓ Ortak arşive taşındı!', ()=>{
       personalLib[id] = backup; savePersonal(); renderPersonal();
@@ -2354,6 +2661,7 @@ function personalToMyLog(id){
   invalidateDiscoverCache();
   const backup = Object.assign({}, e);
   delete personalLib[id];
+  tombAdd([id]);
   savePersonal(); renderPersonal();
   showToast('📓 İzledim listesine taşındı!', ()=>{
     const l2 = getMyLog(); delete l2[lid]; saveMyLog(l2);
@@ -2404,7 +2712,8 @@ function openModal(item){
   afterRender();
   setOverview(item.overview||'', item, tv);
   loadProviders(item.tmdbId||item.id, tv);
-  document.getElementById('noteInput').value = '';
+  document.getElementById('noteInput').value = ownNoteFor(item);
+  if(!/^\d+$/.test(String(item.tmdbId||item.id||''))) resolveModalItem(item, yr, tv);
   document.getElementById('ratingSection').style.display = 'none';
   buildStars();
   updateDestUI();
@@ -2417,25 +2726,35 @@ async function loadProviders(id, tv){
   if(!el) return;
   el.innerHTML = '';
   if(!id || !/^\d+$/.test(String(id))) return;
-  const cache = lsGet('cm_prov_cache') || {};
-  const k = (tv?'t':'m')+id;
-  const draw = list => {
-    if(!list || !list.length){ el.innerHTML = ''; return; }
+  try{
+    const list = await fetchProviders(String(id), !!tv);
+    if(!list || !list.length) return;
+    if(currentItem && String(currentItem.tmdbId||currentItem.id) !== String(id)) return;
     el.innerHTML = '<span class="prov-lbl">İzle:</span>' + list.slice(0,6).map(p=>
       `<img class="prov-logo" src="https://image.tmdb.org/t/p/w92${p.logo}" title="${esc(p.name)}" alt="${esc(p.name)}"/>`).join('');
-  };
-  if(cache[k] && Date.now()-cache[k].ts < 7*864e5){ draw(cache[k].v); return; }
-  try{
-    const d = await fetch(`${TMDB_BASE}/${tv?'tv':'movie'}/${id}/watch/providers?api_key=${TMDB_KEY}`).then(r=>r.json());
-    const tr = (d.results||{}).TR || {};
-    const seen = {};
-    const list = [...(tr.flatrate||[]), ...(tr.free||[]), ...(tr.ads||[])]
-      .filter(p=>{ if(seen[p.provider_id]) return false; seen[p.provider_id]=1; return true; })
-      .map(p=>({ name:p.provider_name, logo:p.logo_path }));
-    cache[k] = { v:list, ts:Date.now() };
-    lsSet('cm_prov_cache', cache);
-    draw(list);
   }catch(e){}
+}
+
+async function resolveModalItem(item, yr, tv){
+  const r = await resolveByTitle(item.titleEn||item.title||item.name, yr, tv);
+  if(!r || currentItem !== item) return;
+  item.tmdbId = String(r.id);
+  item.titleEn = r.titleEn || item.titleEn;
+  item.titleTr = r.titleTr || item.titleTr || r.titleEn;
+  item.origTitle = r.origTitle || item.origTitle;
+  item.origLang = r.origLang || item.origLang;
+  if(!item.vote_average && r.vote) item.vote_average = r.vote;
+  if(!item.poster_path && r.poster) item.poster_path = r.poster;
+  const t2 = !!r.tv;
+  document.getElementById('mTitle').innerHTML = dispTitleHtml(item);
+  document.getElementById('mMeta').innerHTML = `
+    <span class="chip ${t2?'ctv':'cmovie'}">${t2?'Dizi':'Film'}</span>
+    ${yr?`<span style="font-size:12px;color:var(--t3)">${yr}</span>`:''}
+    ${item.vote_average>0?`<span style="font-size:12px;color:var(--gold)">⭐ TMDB ${(+item.vote_average).toFixed(1)}</span>`:''}
+    ${imdbBadge(item.tmdbId, t2)}`;
+  setOverview(r.overviewTr||item.overview||'', item, t2);
+  loadProviders(item.tmdbId, t2);
+  afterRender();
 }
 
 function toggleOverview(){
@@ -2591,12 +2910,15 @@ async function saveItem(){
       if(!wantedBy.includes(user.name)) wantedBy.push(user.name);
       if(rating>0) ratings[user.name] = rating;
       if(note)     notes[user.name]   = note;
-      await db.ref('sharedLib/'+id).set(Object.assign({}, base, {status, ratings, notes, wantedBy}));
-      if(status==='watched') invalidateDiscoverCache();
+      const extra = { status, ratings, notes, wantedBy, addedAt: prev.addedAt || base.addedAt, addedBy: prev.addedBy || base.addedBy };
+      if(status==='watched') extra.watchedAt = (prev.status==='watched' && prev.watchedAt) ? prev.watchedAt : Date.now();
+      await db.ref('sharedLib/'+id).set(Object.assign({}, prev, base, extra));
+      if(status==='watched'){ invalidateDiscoverCache(); removeFromPersonalFor(item); }
       showToast(status==='watched'?'✓ Ortak arşive eklendi!':'🎬 İzleyeceğiz listesine eklendi!');
 
     } else if(dest==='mylog'){
       addToMyLog(item, rating, note);
+      removeFromPersonalFor(item);
       if(activeTab()==='mylog') renderMyLog();
 
     } else if(dest==='suggest'){
@@ -2616,10 +2938,13 @@ async function saveItem(){
       if(!db){ showToast('❌ Firebase bağlantısı yok'); return; }
       const prev2 = sharedLib[id]||{};
       const ratings2 = Object.assign({}, prev2.ratings||{});
+      const notes2 = Object.assign({}, prev2.notes||{});
       const wantedBy2 = prev2.wantedBy ? [...prev2.wantedBy] : [user.name];
       if(!wantedBy2.includes(user.name)) wantedBy2.push(user.name);
       if(rating>0) ratings2[user.name] = rating;
-      await db.ref('sharedLib/'+id).set(Object.assign({}, base, {status:'ongoing', ratings:ratings2, wantedBy:wantedBy2, updatedAt:Date.now()}));
+      if(note) notes2[user.name] = note;
+      await db.ref('sharedLib/'+id).set(Object.assign({}, prev2, base, {status:'ongoing', ratings:ratings2, notes:notes2, wantedBy:wantedBy2,
+        addedAt: prev2.addedAt || base.addedAt, addedBy: prev2.addedBy || base.addedBy, updatedAt:Date.now()}));
       invalidateDiscoverCache();
       showToast('▶ Devam Ediyoruz listesine eklendi!');
     }
@@ -2642,7 +2967,7 @@ async function markWatched(id){
     : `<div class="modal-poster-ph">${item.tv?'📺':'🎬'}</div>`;
   document.getElementById('mMeta').innerHTML = `<span class="chip ${item.tv?'ctv':'cmovie'}">${item.tv?'Dizi':'Film'}</span>`;
   setOverview(item.overview||'', item, !!item.tv);
-  document.getElementById('noteInput').value = '';
+  document.getElementById('noteInput').value = ownNoteFor(item);
   buildStars();
   updateDestUI();
   document.getElementById('modal').classList.add('open');
@@ -2659,6 +2984,7 @@ async function markOngoingWatched(id){
   const updated = Object.assign({}, item, {
     status: 'watched',
     ratings, notes, wantedBy,
+    watchedAt: Date.now(),
     updatedAt: Date.now()
   });
   try {
