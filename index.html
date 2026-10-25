@@ -275,6 +275,9 @@ img{display:block}
 .recap-top{font-size:11.5px;color:var(--t2);margin-top:8px;padding-top:8px;border-top:1px dashed var(--s3)}
 .recap-empty{font-size:12px;color:var(--t3);padding:6px 0}
 .ldate{font-size:11px;color:var(--t3);white-space:nowrap}
+.ldate.edit{position:relative;cursor:pointer;border-bottom:1px dashed var(--t3);transition:color .15s}
+.ldate.edit:hover{color:var(--gold);border-bottom-color:var(--gold)}
+.datehid{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;pointer-events:none;border:0;padding:0}
 .prov-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;align-items:center}
 .pchip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border-radius:20px;border:1px solid var(--s3);background:var(--s2);color:var(--t2);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
 .pchip img{width:20px;height:20px;border-radius:5px;object-fit:cover}
@@ -978,11 +981,56 @@ async function hydrateTitles(){
 // ════════════════════════════════════════════════════════════════
 // TARİH + NOT gösterimi
 // ════════════════════════════════════════════════════════════════
-function dateChip(ts){
-  if(!ts) return '';
-  const d = new Date(ts);
-  if(isNaN(d.getTime())) return '';
-  return `<span class="ldate" title="Eklenme tarihi">📅 ${d.toLocaleDateString('tr-TR')}</span>`;
+function isoDay(d){
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+}
+// src/key/field verilirse tarih düzenlenebilir (tıklayınca takvim açılır)
+function dateChip(ts, src, key, field){
+  const d = ts ? new Date(ts) : null;
+  const valid = d && !isNaN(d.getTime());
+  const label = valid ? d.toLocaleDateString('tr-TR') : 'tarih ekle';
+  if(!src || key===undefined || key===null || key===''){
+    return valid ? `<span class="ldate">📅 ${label}</span>` : '';
+  }
+  return `<span class="ldate edit" title="Tarihi değiştirmek için tıkla" onclick="openDatePick(this)">📅 ${label}`
+    + `<input type="date" class="datehid" value="${valid?isoDay(d):''}" max="${isoDay(new Date())}" `
+    + `data-src="${src}" data-key="${esc(key)}" data-field="${field}" onchange="setEntryDate(this)" onclick="event.stopPropagation()"/></span>`;
+}
+function openDatePick(el){
+  const inp = el.querySelector('input');
+  if(!inp) return;
+  try{ if(inp.showPicker){ inp.showPicker(); return; } }catch(e){}
+  inp.style.pointerEvents = 'auto'; inp.focus(); inp.click();
+}
+function setEntryDate(inp){
+  const v = inp.value;
+  if(!v) return;
+  const ts = new Date(v+'T12:00:00').getTime();
+  const { src, key, field } = inp.dataset;
+  let old;
+  const apply = (val)=>{
+    if(src==='shared'){
+      if(!sharedLib[key]) return;
+      sharedLib[key][field] = val;
+      if(db) db.ref('sharedLib/'+key+'/'+field).set(val).catch(e=>showToast('❌ '+String(e.message||e).slice(0,80)));
+    } else if(src==='mylog'){
+      const log = getMyLog(); if(!log[key]) return;
+      log[key][field] = val; saveMyLog(log);
+    } else if(src==='personal'){
+      if(!personalLib[key]) return;
+      personalLib[key][field] = val; savePersonal();
+    }
+    rerenderActive();
+  };
+  const cur = src==='shared' ? sharedLib[key] : src==='mylog' ? getMyLog()[key] : personalLib[key];
+  if(!cur) return;
+  old = cur[field];
+  apply(ts);
+  showToast('📅 Tarih '+new Date(ts).toLocaleDateString('tr-TR')+' olarak güncellendi', ()=>{
+    apply(old===undefined ? null : old);
+    showToast('↩ Geri alındı!');
+  });
 }
 // Paylaşılan kayıtlardaki kişi başı notlar
 function notesHtml(e){
@@ -2059,7 +2107,7 @@ function renderWatched(){
           <div class="ltitle">${dispTitleHtml(e)}</div>
           <div style="display:flex;gap:3px;flex-shrink:0">${watcherIcons||(`<span style="font-size:15px">${emoji(e.addedBy||'Fox')}</span>`)}</div>
         </div>
-        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}${dateChip(e.watchedAt||e.addedAt)}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}${dateChip(e.watchedAt||e.addedAt,'shared',e.id,'watchedAt')}</div>
         ${ratingHtml?`<div class="lratings">${ratingHtml}</div>`:''}
         ${notesHtml(e)}
         <div class="lactions">
@@ -2098,7 +2146,7 @@ function renderWatchlist(){
           <div class="ltitle">${dispTitleHtml(e)}</div>
           <div style="display:flex;gap:3px;flex-shrink:0">${wlIcons}</div>
         </div>
-        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}${dateChip(e.addedAt)}</div>
+        <div class="lmeta"><span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}${e.score>0?`<span style="font-size:11px;color:var(--gold)">⭐${(+e.score).toFixed(1)}</span>`:''}${imdbBadge(e.tmdbId||e.id, e.tv)}${dateChip(e.addedAt,'shared',e.id,'addedAt')}</div>
         ${notesHtml(e)}
         <div class="lactions">
           <button class="btn bgreen bxs" onclick="markWatched('${e.id}')">✓ İzledik!</button>
@@ -2221,7 +2269,7 @@ function renderMyLog(){
           ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
           ${imdbBadge(e.tmdbId||e.id, e.tv)}
           ${stars}
-          ${dateStr?`<span style="font-size:11px;color:var(--t3)">${dateStr}</span>`:''}
+          ${dateChip(e.loggedAt, isMe?'mylog':'', e.id, 'loggedAt')}
           ${e.tv && e.myEpisode ? `<span style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbr);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">▶ ${e.myEpisode}</span>` : ''}
           ${e.tv && e.myStatus==='done' ? `<span style="background:var(--grbg);color:var(--green);border:1px solid var(--grbd);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">✓ Bitti</span>` : ''}
         </div>
@@ -2333,7 +2381,7 @@ function renderOngoing(){
           ${yr?`<span style="font-size:11px;color:var(--t3)">${yr}</span>`:''}
           ${epBadge}
           ${nextEpBadge(item)}
-          ${dateChip(item.addedAt)}
+          ${dateChip(item.addedAt,'shared',item.id,'addedAt')}
         </div>
         ${rFox||rBun ? `<div style="font-size:11px;color:var(--gold);margin:4px 0">${rFox} ${rBun}</div>` : ''}
         ${notesHtml(item)}
@@ -2602,7 +2650,7 @@ function renderPersonal(){
         <div class="lmeta">
           <span class="chip ${e.tv?'ctv':'cmovie'}">${e.tv?'Dizi':'Film'}</span>
           ${e.year?`<span style="font-size:11px;color:var(--t3)">${e.year}</span>`:''}
-          ${dateChip(e.addedAt)}
+          ${dateChip(e.addedAt, isMe?'personal':'', e.id, 'addedAt')}
         </div>
         ${e.note&&e.note!=='Letterboxd watchlist'?`<div class="lnote">"${e.note}"</div>`:''}
         <div class="lactions" style="flex-direction:row;flex-wrap:wrap;gap:6px">
