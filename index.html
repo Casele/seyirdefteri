@@ -2014,6 +2014,19 @@ function renderSearchGrid(items){
   afterRender();
 }
 
+// İzledik / İzleyeceğiz sekmelerindeki Hepsi · Film · Dizi butonları
+function setFilter(tab, f, btn){
+  filters[tab] = f;
+  const pane = document.getElementById('pane-'+tab);
+  if(pane){
+    pane.querySelectorAll('.filter-row .pill').forEach(b=>{
+      if(/setFilter/.test(b.getAttribute('onclick')||'')) b.classList.remove('on');
+    });
+  }
+  if(btn) btn.classList.add('on');
+  if(tab==='watched')   renderWatched();
+  if(tab==='watchlist') renderWatchlist();
+}
 function filterWatched(q){ watchedQ=q.toLowerCase().trim(); renderWatched(); }
 function filterWatchlist(q){ watchlistQ=q.toLowerCase().trim(); renderWatchlist(); }
 function filterSuggest(q){ suggestQ=q.toLowerCase().trim(); renderSuggestions(); }
@@ -2026,7 +2039,7 @@ function renderWatched(){
   if(f==='movie') items = items.filter(e=>!e.tv);
   if(f==='tv')    items = items.filter(e=>!!e.tv);
   if(watchedQ) items=items.filter(e=>matchQ(e,watchedQ));
-  items.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  items.sort((a,b)=>((b.watchedAt||b.addedAt||0)-(a.watchedAt||a.addedAt||0)));
   document.getElementById('watchedCnt').textContent = items.length+' yapım';
   afterRender();
   const el = document.getElementById('watchedList');
@@ -2633,7 +2646,7 @@ async function personalToWatched(id){
   try{
     await db.ref('sharedLib/'+sid).set(Object.assign({}, e, {
       id:sid, status:'watched', ratings, notes:prev.notes||{}, wantedBy,
-      addedBy:user.name, addedAt:Date.now()
+      addedBy:user.name, addedAt:Date.now(), watchedAt:Date.now()
     }));
     const backup = Object.assign({}, e);
     delete personalLib[id]; tombAdd([id]); savePersonal(); renderPersonal();
@@ -2950,7 +2963,7 @@ async function saveItem(){
     }
   } catch(err){
     const m = String(err.message||err);
-    showToast(m.includes('PERMISSION_DENIED')?'❌ Firebase izin hatası! Rules düzelt.':'❌ '+m.slice(0,60));
+    showToast(m.includes('PERMISSION_DENIED')?'❌ Firebase izin hatası! Rules düzelt.':'❌ Kaydedilemedi: '+m.slice(0,140));
   }
 }
 
